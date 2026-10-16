@@ -13,6 +13,7 @@ import '../blocs/theme_bloc.dart';
 import '../blocs/theme_event.dart';
 import '../widgets/featured_meals.dart';
 import '../widgets/hot_offers.dart';
+import '../widgets/home_menu_shimmer.dart';
 import '../widgets/menu_grid.dart';
 import 'browse_screen.dart';
 import 'cart_screen.dart';
@@ -193,7 +194,7 @@ class _HomeFeed extends StatelessWidget {
     return BlocBuilder<MenuCubit, MenuState>(
       builder: (context, state) {
         if (state.status == MenuStatus.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return HomeMenuShimmer(horizontalPadding: horizontalPadding);
         }
         if (state.status == MenuStatus.error) {
           return Center(
@@ -219,11 +220,6 @@ class _HomeFeed extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 12),
             children: [
-              if (state.isRefreshing)
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  child: const LinearProgressIndicator(minHeight: 2),
-                ),
               if (state.message != null) ...[
                 const SizedBox(height: 8),
                 Padding(
@@ -242,7 +238,7 @@ class _HomeFeed extends StatelessWidget {
               _SectionTitle(AppStrings.hotOffers, horizontalPadding),
               HotOffers(meals, horizontalPadding: horizontalPadding),
               const SizedBox(height: 20),
-              _SectionTitle(AppStrings.discoverMeals, horizontalPadding),
+              _SectionTitle(AppStrings.liveMenu, horizontalPadding),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: MenuGrid(meals.take(6).toList()),

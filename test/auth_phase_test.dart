@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +23,7 @@ import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/signup_screen.dart';
 import 'package:streetbite/presentation/screens/splash_screen.dart';
 import 'package:streetbite/presentation/widgets/hot_offers.dart';
+import 'package:streetbite/presentation/widgets/home_menu_shimmer.dart';
 import 'package:streetbite/presentation/widgets/meal_card.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -71,6 +74,13 @@ class FakeMealRepository implements MealRepository {
       instructions: '',
     ),
   );
+}
+
+class PendingMealRepository extends FakeMealRepository {
+  final result = Completer<List<Meal>>();
+
+  @override
+  Future<List<Meal>> refreshMeals() => result.future;
 }
 
 void main() {
@@ -347,5 +357,35 @@ void main() {
     await tester.tap(find.text(AppStrings.profile).last);
     await tester.pumpAndSettle();
     expect(find.text('sara@example.com'), findsOneWidget);
+  });
+
+  testWidgets('home shows shimmer until the live menu arrives', (tester) async {
+    final repository = FakeAuthRepository()
+      ..signedInUser = const AppUser(
+        id: 'uid-1',
+        fullName: 'Sara Ali',
+        email: 'sara@example.com',
+      );
+    final meals = PendingMealRepository();
+    locator.registerSingleton<AuthCubit>(makeCubit(repository));
+    locator.registerFactory<MenuCubit>(() => MenuCubit(meals));
+    addTearDown(() async => locator.reset());
+
+    await tester.pumpWidget(const StreetBiteApp());
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pump();
+
+    expect(find.byType(HomeMenuShimmer), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(tester.takeException(), isNull);
+
+    meals.result.complete(await FakeMealRepository().refreshMeals());
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeMenuShimmer), findsNothing);
+    expect(find.text(AppStrings.recommended), findsOneWidget);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.liveMenu), findsOneWidget);
   });
 }

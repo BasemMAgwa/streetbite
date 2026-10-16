@@ -46,7 +46,7 @@ class AppStrings {
   static const profile = 'Profile';
   static const recommended = 'Recommended';
   static const hotOffers = 'Hot Offers';
-  static const discoverMeals = 'Discover meals';
+  static const liveMenu = 'Live Menu';
   static const browseAll = 'Browse all';
   static const addToCart = 'Add to cart';
   static const cart = 'Cart';
