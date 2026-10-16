@@ -3,28 +3,57 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static const green = Color(0xFF00C874);
   static const paleMint = Color(0xFFE5F8F1);
+  static const ink = Color(0xFF202124);
+  static const muted = Color(0xFF858B94);
+  static const darkBackground = Color(0xFF121C19);
+  static const darkCard = Color(0xFF263A33);
+  static const darkCardBorder = Color(0xFF3F5A4E);
+  static const sectionFont = 'sf-pro';
+  static const bodyFont = 'sf-compact';
 
-  static ThemeData get light => ThemeData(
-    useMaterial3: true,
-    fontFamily: 'sf-pro',
-    colorScheme: ColorScheme.fromSeed(seedColor: green),
-    scaffoldBackgroundColor: green,
-    inputDecorationTheme: const InputDecorationTheme(
-      filled: true,
-      fillColor: paleMint,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide.none,
+  static ThemeData get light => _build(Brightness.light);
+
+  static ThemeData get dark => _build(Brightness.dark);
+
+  static ThemeData _build(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final background = isDark ? darkBackground : Colors.white;
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      fontFamily: bodyFont,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: green,
+        brightness: brightness,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide.none,
+      scaffoldBackgroundColor: background,
+      canvasColor: isDark ? darkCard : Colors.white,
+      cardColor: isDark ? darkCard : Colors.white,
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        foregroundColor: isDark ? Colors.white : ink,
+        elevation: 0,
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide(color: Color(0xFF007D49), width: 2),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: isDark ? darkCard : paleMint,
+        border: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFF007D49), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-  );
+    );
+  }
 }

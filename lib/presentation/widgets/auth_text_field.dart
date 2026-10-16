@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_theme.dart';
 
 class AuthTextField extends StatefulWidget {
   const AuthTextField({
@@ -43,6 +44,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
       enableSuggestions: !widget.obscureText,
       style: const TextStyle(color: Color(0xFF123629), fontSize: 15),
       decoration: InputDecoration(
+        fillColor: AppTheme.paleMint,
         hintText: widget.hint,
         hintStyle: const TextStyle(color: Color(0xFF8A9D98)),
         suffixIcon: widget.obscureText

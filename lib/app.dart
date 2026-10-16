@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
 import 'injection.dart';
 import 'presentation/blocs/auth_cubit.dart';
 import 'presentation/blocs/auth_state.dart';
+import 'presentation/blocs/cart_bloc.dart';
+import 'presentation/blocs/theme_bloc.dart';
+import 'presentation/blocs/theme_event.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/splash_screen.dart';
@@ -14,8 +18,15 @@ class StreetBiteApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => locator<AuthCubit>()..initialize(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => locator<AuthCubit>()..initialize()),
+        BlocProvider(
+          create: (_) =>
+              ThemeBloc(SharedPreferencesAsync())..add(const LoadTheme()),
+        ),
+        BlocProvider(create: (_) => CartBloc()),
+      ],
       child: const _AppView(),
     );
   }
@@ -46,6 +57,8 @@ class _AppViewState extends State<_AppView> {
         debugShowCheckedModeBanner: false,
         scaffoldMessengerKey: _messengerKey,
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: context.watch<ThemeBloc>().state,
         home: state.status == AuthStatus.authenticated
             ? const HomeScreen(key: ValueKey('home'))
             : AnimatedSwitcher(

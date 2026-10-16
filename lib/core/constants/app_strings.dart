@@ -40,4 +40,27 @@ class AppStrings {
       'Could not save your account. Please try again.';
   static const serviceUnavailable = 'Service is unavailable. Please try again.';
   static const tryAgain = 'Try again';
+  static const home = 'Home';
+  static const browse = 'Browse';
+  static const orders = 'Orders';
+  static const profile = 'Profile';
+  static const recommended = 'Recommended';
+  static const hotOffers = 'Hot Offers';
+  static const discoverMeals = 'Discover meals';
+  static const browseAll = 'Browse all';
+  static const addToCart = 'Add to cart';
+  static const cart = 'Cart';
+  static const favorites = 'Favorites';
+  static const lightMode = 'Light mode';
+  static const darkMode = 'Dark mode';
+  static const menuUnavailable =
+      'Meals are unavailable right now. Please try again.';
+  static const showingSavedMeals = 'Showing saved meals while offline.';
+  static const loadingMeals = 'Loading meals…';
+  static const mealAdded = 'Added to cart';
+  static const emptyCart = 'Your cart is empty.';
+  static const noOrders = 'Your orders will appear here.';
+  static const noFavorites = 'Your favorites will appear here.';
+  static const hotFlag = 'HOT';
+  static const searchMeals = 'Search meals';
 }

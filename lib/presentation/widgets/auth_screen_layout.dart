@@ -58,6 +58,7 @@ class AuthScreenLayout extends StatelessWidget {
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: Colors.white,
+                                  fontFamily: AppTheme.sectionFont,
                                   fontSize: 30,
                                   height: 1.07,
                                   fontWeight: FontWeight.w700,

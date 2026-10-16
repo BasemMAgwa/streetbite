@@ -3,19 +3,27 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
 import 'package:streetbite/domain/entities/auth_failure.dart';
+import 'package:streetbite/domain/entities/meal.dart';
 import 'package:streetbite/domain/repositories/auth_repository.dart';
+import 'package:streetbite/domain/repositories/meal_repository.dart';
 import 'package:streetbite/domain/usecases/sign_in.dart';
 import 'package:streetbite/domain/usecases/sign_out.dart';
 import 'package:streetbite/domain/usecases/sign_up.dart';
 import 'package:streetbite/injection.dart';
 import 'package:streetbite/presentation/blocs/auth_cubit.dart';
 import 'package:streetbite/presentation/blocs/auth_state.dart';
+import 'package:streetbite/presentation/blocs/menu_cubit.dart';
 import 'package:streetbite/presentation/screens/login_screen.dart';
 import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/signup_screen.dart';
 import 'package:streetbite/presentation/screens/splash_screen.dart';
+import 'package:streetbite/presentation/widgets/hot_offers.dart';
+import 'package:streetbite/presentation/widgets/meal_card.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 class FakeAuthRepository implements AuthRepository {
   AppUser? signedInUser;
@@ -47,7 +55,29 @@ AuthCubit makeCubit(FakeAuthRepository repository) => AuthCubit(
   SignOut(repository),
 );
 
+class FakeMealRepository implements MealRepository {
+  @override
+  Future<List<Meal>> getCachedMeals() async => [];
+
+  @override
+  Future<List<Meal>> refreshMeals() async => List.generate(
+    9,
+    (index) => Meal(
+      id: '$index',
+      name: 'Meal $index',
+      category: 'Dinner',
+      imageUrl: '',
+      area: '',
+      instructions: '',
+    ),
+  );
+}
+
 void main() {
+  setUp(() {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+  });
   test(
     'authentication errors stay on the form with a friendly message',
     () async {
@@ -198,6 +228,7 @@ void main() {
     final repository = FakeAuthRepository();
     final cubit = makeCubit(repository);
     locator.registerSingleton<AuthCubit>(cubit);
+    locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
     addTearDown(() async {
       await locator.reset();
     });
@@ -219,6 +250,102 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('Sara Ali'), findsNothing);
+    await tester.tap(find.text(AppStrings.profile));
+    await tester.pumpAndSettle();
     expect(find.text('Sara Ali'), findsOneWidget);
+  });
+
+  testWidgets('home tabs, theme toggle and cart work with live menu state', (
+    tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(327, 707);
+    final repository = FakeAuthRepository()
+      ..signedInUser = const AppUser(
+        id: 'uid-1',
+        fullName: 'Sara Ali',
+        email: 'sara@example.com',
+      );
+    locator.registerSingleton<AuthCubit>(makeCubit(repository));
+    locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
+    addTearDown(() async => locator.reset());
+
+    await tester.pumpWidget(const StreetBiteApp());
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+
+    expect(find.text(AppStrings.recommended), findsOneWidget);
+    expect(find.text(AppStrings.hotOffers), findsOneWidget);
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.byTooltip(AppStrings.favorites), findsOneWidget);
+    expect(find.byTooltip(AppStrings.cart), findsOneWidget);
+    expect(find.text('Sara Ali'), findsNothing);
+    expect(find.text(AppStrings.hotFlag), findsWidgets);
+    expect(
+      tester.widget<Text>(find.text(AppStrings.recommended)).style?.fontFamily,
+      AppTheme.sectionFont,
+    );
+    expect(
+      Theme.of(tester.element(find.byType(HomeScreen)))
+          .textTheme
+          .bodyMedium
+          ?.fontFamily,
+      AppTheme.bodyFont,
+    );
+    expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(360, 640);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    tester.view.physicalSize = const Size(327, 707);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip(AppStrings.darkMode));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
+    );
+    final darkTheme = Theme.of(tester.element(find.byType(HomeScreen)));
+    expect(
+      tester.widget<Text>(find.text(AppStrings.recommended)).style?.color,
+      darkTheme.colorScheme.onSurface,
+    );
+    final offersList = find.descendant(
+      of: find.byType(HotOffers),
+      matching: find.byType(ListView),
+    );
+    expect(tester.getSize(offersList).width, 327);
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -650));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final mealCard = find.descendant(
+      of: find.byType(MealCard).first,
+      matching: find.byType(Card),
+    );
+    expect(tester.widget<Card>(mealCard).color, AppTheme.darkCard);
+    await tester.tap(find.text(AppStrings.addToCart).first);
+    await tester.pump();
+    expect(find.text(AppStrings.mealAdded), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip(AppStrings.cart));
+    await tester.pumpAndSettle();
+    expect(find.text('Meal 0'), findsWidgets);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(AppStrings.browse).last);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.searchMeals), findsOneWidget);
+    await tester.tap(find.text(AppStrings.orders).last);
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.noOrders), findsOneWidget);
+    await tester.tap(find.text(AppStrings.profile).last);
+    await tester.pumpAndSettle();
+    expect(find.text('sara@example.com'), findsOneWidget);
   });
 }
