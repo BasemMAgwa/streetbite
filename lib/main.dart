@@ -1,12 +1,49 @@
 import 'package:firebase_core/firebase_core.dart';
-
-import 'firebase_options.dart';
-
 import 'package:flutter/material.dart';
-import 'package:streetbite/app.dart';
 
-void main() async {
+import 'app.dart';
+import 'firebase_options.dart';
+import 'injection.dart';
+import 'presentation/screens/splash_screen.dart';
+import 'presentation/screens/startup_error_screen.dart';
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  runApp(const _BootstrapApp());
+}
+
+class _BootstrapApp extends StatefulWidget {
+  const _BootstrapApp();
+
+  @override
+  State<_BootstrapApp> createState() => _BootstrapAppState();
+}
+
+class _BootstrapAppState extends State<_BootstrapApp> {
+  late Future<void> _startup = _initialize();
+
+  Future<void> _initialize() async {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    configureDependencies();
+  }
+
+  void _retry() => setState(() => _startup = _initialize());
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _startup,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return MaterialApp(home: StartupErrorScreen(onRetry: _retry));
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const MaterialApp(home: SplashScreen());
+        }
+        return const StreetBiteApp();
+      },
+    );
+  }
 }

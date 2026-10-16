@@ -1,41 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+import 'core/theme/app_theme.dart';
+import 'injection.dart';
+import 'presentation/blocs/auth_cubit.dart';
+import 'presentation/blocs/auth_state.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/splash_screen.dart';
 
-  // This widget is the root of your application.
+class StreetBiteApp extends StatelessWidget {
+  const StreetBiteApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return BlocProvider(
+      create: (_) => locator<AuthCubit>()..initialize(),
+      child: const _AppView(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class _AppView extends StatefulWidget {
+  const _AppView();
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<_AppView> createState() => _AppViewState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _AppViewState extends State<_AppView> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: .center,
-          children: [const Text('You have pushed the button this many times:')],
-        ),
+    return BlocConsumer<AuthCubit, AuthState>(
+      listenWhen: (previous, current) =>
+          current.message != null && previous.message != current.message,
+      listener: (context, state) {
+        _messengerKey.currentState
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(state.message!)));
+      },
+      builder: (context, state) => MaterialApp(
+        title: 'StreetBite',
+        debugShowCheckedModeBanner: false,
+        scaffoldMessengerKey: _messengerKey,
+        theme: AppTheme.light,
+        home: state.status == AuthStatus.authenticated
+            ? const HomeScreen(key: ValueKey('home'))
+            : AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                switchInCurve: Curves.easeInOut,
+                switchOutCurve: Curves.easeInOut,
+                transitionBuilder: (child, animation) =>
+                    FadeTransition(opacity: animation, child: child),
+                child: switch (state.status) {
+                  AuthStatus.initial => SplashScreen(
+                    key: const ValueKey('splash'),
+                    onTap: context.read<AuthCubit>().completeSplash,
+                  ),
+                  AuthStatus.authenticated => const SizedBox.shrink(),
+                  AuthStatus.unauthenticated => const LoginScreen(
+                    key: ValueKey('login'),
+                  ),
+                },
+              ),
       ),
     );
   }
