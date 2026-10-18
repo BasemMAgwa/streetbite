@@ -4,6 +4,16 @@ sealed class CartEvent {
   const CartEvent();
 }
 
+class RestoreCart extends CartEvent {
+  const RestoreCart(this.userId);
+
+  final String userId;
+}
+
+class ResetCart extends CartEvent {
+  const ResetCart();
+}
+
 class AddMealToCart extends CartEvent {
   const AddMealToCart(this.meal);
 
@@ -24,4 +34,8 @@ class RemoveMealFromCart extends CartEvent {
 
 class ClearCart extends CartEvent {
   const ClearCart();
+}
+
+class EmptyCart extends CartEvent {
+  const EmptyCart();
 }

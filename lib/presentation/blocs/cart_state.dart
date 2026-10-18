@@ -1,4 +1,5 @@
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/order_pricing.dart';
 
 class CartState {
   const CartState({this.items = const [], this.checkedOut = false});
@@ -13,5 +14,7 @@ class CartState {
   bool containsMeal(String mealId) =>
       items.any((item) => item.meal.id == mealId);
 
-  int get totalCents => items.fold(0, (sum, item) => sum + item.totalCents);
+  int get totalCents => OrderPricing.subtotalCents(items);
+
+  int get checkoutTotalCents => OrderPricing.totalCents(items);
 }

@@ -70,17 +70,36 @@ class AppStrings {
   static const loadingMeals = 'Loading meals…';
   static const mealAdded = 'Added to cart';
   static const emptyCart = 'Your cart is empty.';
+  static const clearCart = 'Empty cart';
+  static const continueToCheckout = 'Continue';
+  static const checkout = 'Checkout';
+  static const back = 'Back';
+  static const close = 'Close';
+  static const orderSummary = 'Price summary';
+  static const orderAmount = 'Order';
+  static const deliveryFee = 'Delivery fee';
+  static const taxesFee = 'Fees & taxes';
+  static const currentLocation = 'Your current location';
+  static const findingLocation = 'Finding your location…';
+  static const locationUnavailable =
+      'Location is unavailable. Enable location access to see your position.';
+  static const openLocationSettings = 'Open location settings';
   static const cartEmptied = 'Your cart is now empty.';
   static const increaseQuantity = 'Increase quantity';
   static const decreaseQuantity = 'Decrease quantity';
   static const paymentMethod = 'Payment method';
   static const cashPayment = 'Cash';
   static const cardPayment = 'Card';
-  static const cardDemoNote = 'Demo payment. No card is charged.';
+  static const cashPaymentSubtitle = 'Pay on delivery';
+  static const cardPaymentSubtitle = 'Payment pending';
+  static const cardPaymentNote =
+      'Card payment will remain pending until payment is available.';
   static const total = 'Total';
   static const placeOrder = 'Place order';
   static const orderPlacedCash = 'Order placed. Pay in cash on delivery.';
   static const orderPlacedPaid = 'Order placed and paid by card.';
+  static const orderPlacedCardPending =
+      'Order placed. Card payment is pending.';
   static const orderSaveError = 'Could not place your order. Please try again.';
   static const paymentError = 'Payment failed. Please try another method.';
   static const noOrders = 'Your orders will appear here.';

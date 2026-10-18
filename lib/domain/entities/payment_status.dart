@@ -1,1 +1,1 @@
-enum PaymentStatus { paid, dueOnDelivery }
+enum PaymentStatus { paid, dueOnDelivery, pending }

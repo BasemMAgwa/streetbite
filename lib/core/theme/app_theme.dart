@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   static const green = Color(0xFF00C874);
+  static const badgeGreen = Color(0xFF007D49);
   static const paleMint = Color(0xFFE5F8F1);
   static const ink = Color(0xFF202124);
   static const muted = Color(0xFF858B94);

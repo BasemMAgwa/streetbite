@@ -16,7 +16,15 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: showAppBar ? AppBar(title: Text(title)) : null,
+    appBar: showAppBar
+        ? AppBar(
+            title: Text(title),
+            leading: IconButton(
+              icon: const Icon(Icons.chevron_left, size: 32),
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
+          )
+        : null,
     body: Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,

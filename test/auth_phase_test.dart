@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
 import 'package:streetbite/data/datasources/cash_payment_method.dart';
+import 'package:streetbite/data/datasources/cart_local_data_source.dart';
 import 'package:streetbite/domain/entities/auth_failure.dart';
+import 'package:streetbite/domain/entities/cart_item.dart';
 import 'package:streetbite/domain/entities/favourites_failure.dart';
 import 'package:streetbite/domain/entities/meal.dart';
 import 'package:streetbite/domain/entities/order.dart';
@@ -137,6 +140,43 @@ void main() {
   setUp(() {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
+  });
+  testWidgets('saved cart count appears when a signed-in user returns', (
+    tester,
+  ) async {
+    final meal = const Meal(
+      id: '0',
+      name: 'Meal 0',
+      category: 'Dinner',
+      imageUrl: '',
+      area: 'Turkish',
+      instructions: '',
+    );
+    await CartLocalDataSource(SharedPreferencesAsync())
+        .save('uid-1', [CartItem.fromMeal(meal).withQuantity(2)]);
+    final auth = FakeAuthRepository()
+      ..signedInUser = const AppUser(
+        id: 'uid-1',
+        fullName: 'Sara Ali',
+        email: 'sara@example.com',
+      );
+    locator.registerSingleton<AuthCubit>(makeCubit(auth));
+    locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
+    locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
+    addTearDown(() async => locator.reset());
+
+    await tester.pumpWidget(const StreetBiteApp());
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+    final badge = find.ancestor(
+      of: find.byTooltip(AppStrings.cart),
+      matching: find.byType(Badge),
+    );
+    expect(tester.widget<Badge>(badge).isLabelVisible, true);
+    expect(
+      find.descendant(of: badge, matching: find.text('2')),
+      findsOneWidget,
+    );
   });
   test('favourites show a friendly network error and stay unchanged', () async {
     final repository = FakeFavouritesRepository()..failAdd = true;
@@ -426,7 +466,8 @@ void main() {
     await tester.tap(find.byTooltip(AppStrings.cart));
     await tester.pumpAndSettle();
     expect(find.text('Meal 0'), findsWidgets);
-    await tester.pageBack();
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.byTooltip(AppStrings.close));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text(AppStrings.browse).last);
@@ -591,6 +632,7 @@ void main() {
       matching: find.byType(Badge),
     );
     expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
+    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppTheme.badgeGreen);
     expect(find.text(AppStrings.removeFromCart), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.removeFromCart));
@@ -603,15 +645,20 @@ void main() {
     expect(find.text('Meal 0'), findsWidgets);
     expect(tester.takeException(), isNull);
 
-    await tester.pageBack();
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.removeFromFavorites));
+    expect(find.byType(BottomSheet), findsOneWidget);
+    await tester.tap(find.byTooltip(AppStrings.addToCart));
+    await tester.pump();
+    expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
+    await tester.tap(find.byTooltip(AppStrings.removeFromFavorites));
     await tester.pumpAndSettle();
     expect(favourites.saved, isEmpty);
+    expect(find.text(AppStrings.noFavorites), findsOneWidget);
+    await tester.tap(find.byTooltip(AppStrings.close));
+    await tester.pumpAndSettle();
     expect(find.text(AppStrings.addToFavorites), findsOneWidget);
     expect(tester.widget<Badge>(favoritesBadge).isLabelVisible, false);
 
-    await tester.pageBack();
+    await tester.tap(find.byTooltip(AppStrings.back));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
     await tester.pumpAndSettle();

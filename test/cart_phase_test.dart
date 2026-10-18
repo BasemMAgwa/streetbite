@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/formatting/price_formatter.dart';
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/data/datasources/card_payment_method.dart';
+import 'package:streetbite/data/datasources/cart_local_data_source.dart';
+import 'package:streetbite/data/datasources/device_location_source.dart';
 import 'package:streetbite/data/datasources/cash_payment_method.dart';
 import 'package:streetbite/data/models/order_model.dart';
 import 'package:streetbite/domain/entities/cart_item.dart';
 import 'package:streetbite/domain/entities/meal.dart';
 import 'package:streetbite/domain/entities/order.dart';
 import 'package:streetbite/domain/entities/order_failure.dart';
+import 'package:streetbite/domain/entities/order_pricing.dart';
 import 'package:streetbite/domain/entities/payment_status.dart';
 import 'package:streetbite/domain/entities/payment_type.dart';
 import 'package:streetbite/domain/repositories/order_repository.dart';
@@ -56,6 +61,11 @@ class FakeOrderRepository implements OrderRepository {
   }
 }
 
+class UnavailableLocationSource extends DeviceLocationSource {
+  @override
+  Future<Position?> currentPosition() async => null;
+}
+
 Future<CartState> send(CartBloc cart, CartEvent event) {
   final next = cart.stream.first;
   cart.add(event);
@@ -65,10 +75,38 @@ Future<CartState> send(CartBloc cart, CartEvent event) {
 CheckoutCubit checkout(FakeOrderRepository repository) => CheckoutCubit(
   PlaceOrder(repository),
   'user-1',
-  const [CashPaymentMethod(), CardPaymentMethod(delay: Duration.zero)],
+  const [CashPaymentMethod(), CardPaymentMethod()],
 );
 
 void main() {
+  test('cart restores quantities per user and clears the saved cart', () async {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+    final storage = CartLocalDataSource(SharedPreferencesAsync());
+    final first = CartBloc(storage);
+    await send(first, const RestoreCart('user-1'));
+    await send(first, const AddMealToCart(burger));
+    await send(first, const AddMealToCart(burger));
+    await first.close();
+
+    final restored = CartBloc(storage);
+    var state = await send(restored, const RestoreCart('user-1'));
+    expect(state.items.single.quantity, 2);
+    expect(state.items.single.meal.area, burger.area);
+    await send(restored, DecreaseMealQuantity(burger.id));
+    state = await send(restored, const RestoreCart('user-2'));
+    expect(state.items, isEmpty);
+    state = await send(restored, const RestoreCart('user-1'));
+    expect(state.items.single.quantity, 1);
+    await send(restored, const EmptyCart());
+    await restored.close();
+
+    final afterClear = CartBloc(storage);
+    state = await send(afterClear, const RestoreCart('user-1'));
+    expect(state.items, isEmpty);
+    await afterClear.close();
+  });
+
   test('cart groups quantities and updates the total', () async {
     final cart = CartBloc();
     await send(cart, const AddMealToCart(burger));
@@ -106,7 +144,12 @@ void main() {
     );
 
     expect(order.id, 'order-1');
-    expect(repository.orders.single.totalCents, burger.priceCents * 3);
+    expect(
+      repository.orders.single.totalCents,
+      burger.priceCents * 3 +
+          OrderPricing.deliveryFeeCents +
+          OrderPricing.taxesFeeCents,
+    );
     expect(repository.orders.single.paymentType, PaymentType.cash);
     expect(repository.orders.single.paymentStatus, PaymentStatus.dueOnDelivery);
   });
@@ -122,14 +165,14 @@ void main() {
     );
   });
 
-  test('checkout pays by simulated card and reports success', () async {
+  test('card order remains pending without a payment gateway', () async {
     final repository = FakeOrderRepository();
     final cubit = checkout(repository)..selectPayment(PaymentType.card);
     await cubit.placeOrder([CartItem.fromMeal(soup)]);
 
     expect(cubit.state.orderPlaced, true);
-    expect(cubit.state.message, AppStrings.orderPlacedPaid);
-    expect(repository.orders.single.paymentStatus, PaymentStatus.paid);
+    expect(cubit.state.message, AppStrings.orderPlacedCardPending);
+    expect(repository.orders.single.paymentStatus, PaymentStatus.pending);
     await cubit.close();
   });
 
@@ -186,7 +229,7 @@ void main() {
     );
     await tester.pump();
     expect(find.text(AppStrings.total), findsOneWidget);
-    expect(find.text(AppStrings.placeOrder), findsOneWidget);
+    expect(find.text(AppStrings.continueToCheckout), findsOneWidget);
 
     await tester.tap(find.byTooltip(AppStrings.removeFromCart));
     await tester.pump();
@@ -194,5 +237,76 @@ void main() {
 
     expect(find.text(AppStrings.cartEmptied), findsOneWidget);
     expect(find.text(AppStrings.emptyCart), findsOneWidget);
+  });
+
+  testWidgets('cart continues to checkout inside the same drawer layout', (
+    tester,
+  ) async {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+    final cart = CartBloc()..add(const AddMealToCart(burger));
+    addTearDown(cart.close);
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: cart),
+          BlocProvider(create: (_) => ThemeBloc(SharedPreferencesAsync())),
+          BlocProvider(create: (_) => checkout(FakeOrderRepository())),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light,
+          home: CartScreen(locationSource: UnavailableLocationSource()),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text(AppStrings.clearCart), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(AppStrings.clearCart)).dy,
+      tester.getTopLeft(find.text(AppStrings.continueToCheckout)).dy,
+    );
+    await tester.tap(find.byTooltip(AppStrings.increaseQuantity));
+    await tester.pump();
+    expect(cart.state.items.single.quantity, 2);
+    await tester.tap(find.byTooltip(AppStrings.decreaseQuantity));
+    await tester.pump();
+    expect(cart.state.items.single.quantity, 1);
+    await tester.tap(find.text(AppStrings.continueToCheckout));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.checkout), findsOneWidget);
+    expect(find.text(AppStrings.paymentMethod), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(AppStrings.cashPayment)).dy,
+      closeTo(tester.getTopLeft(find.text(AppStrings.cardPayment)).dy, 2),
+    );
+    expect(
+      tester.getTopLeft(find.text(AppStrings.cashPayment)).dx,
+      lessThan(tester.getTopLeft(find.text(AppStrings.cardPayment)).dx),
+    );
+    await tester.tap(find.text(AppStrings.cardPayment));
+    await tester.pump();
+    expect(find.text(AppStrings.cardPaymentNote), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(AppStrings.deliveryFee),
+      180,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.orderSummary), findsOneWidget);
+    expect(find.text(AppStrings.deliveryFee), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text(AppStrings.taxesFee),
+      180,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.taxesFee), findsOneWidget);
+    expect(
+      find.text(
+        PriceFormatter.format(OrderPricing.totalCents(cart.state.items)),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(AppStrings.placeOrder), findsOneWidget);
   });
 }

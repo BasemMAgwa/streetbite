@@ -63,7 +63,13 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
     final meal = ModalRoute.of(context)?.settings.arguments;
     if (meal is! Meal) {
       return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: AppStrings.back,
+            icon: const Icon(Icons.chevron_left, size: 32),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
         body: const Center(child: Text(AppStrings.menuUnavailable)),
       );
     }
@@ -78,6 +84,11 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: AppStrings.back,
+          icon: const Icon(Icons.chevron_left, size: 32),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         backgroundColor: _pastImage
             ? theme.scaffoldBackgroundColor
             : Colors.transparent,
@@ -104,8 +115,12 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: [0, 0.42],
-                      colors: [Colors.black54, Colors.transparent],
+                      stops: [0, 0.22, 0.60],
+                      colors: [
+                        Color(0xBF000000),
+                        Color(0x80000000),
+                        Colors.transparent,
+                      ],
                     ),
                   ),
                 ),

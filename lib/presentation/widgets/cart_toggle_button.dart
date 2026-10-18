@@ -79,6 +79,7 @@ class CartToggleIconButton extends StatelessWidget {
           isInCart
               ? Icons.remove_shopping_cart_outlined
               : Icons.add_shopping_cart_outlined,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       );
     },

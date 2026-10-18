@@ -5,7 +5,7 @@ animated in-app splash, login, sign-up, Firebase Authentication, and user profil
 in the `Users` Firestore collection. Phase 2 adds a live meal menu, featured meals,
 Hot Offers, a cart preview, bottom navigation, and a saved light/dark theme.
 Phase 3 adds meal details and favourites saved to each user's Firestore document.
-Phase 4 adds the cart, cash or simulated card payment, and orders saved to Firestore.
+Phase 4 adds cart and favourites bottom drawers, checkout, and orders saved to Firestore.
 
 ## Run the app
 
@@ -22,20 +22,32 @@ Phase 4 adds the cart, cash or simulated card payment, and orders saved to Fires
 5. Run `flutter run` on Android or iOS. The current Firebase options support
    those two platforms.
 
+Checkout uses Google Maps with a marker at the device's location. The app
+requests foreground location permission at startup and uses the last known
+position if a fresh fix times out. If location is unavailable, checkout shows a
+retry message and remains usable. Set `MAPS_API_KEY=your-key` in ignored
+`android/local.properties` and `ios/Flutter/Maps.xcconfig`, enable the Maps SDKs
+and billing for that key's Google Cloud project, and restrict production keys
+to the app IDs and signing certificates. The iOS map uses SDK 9 for the
+project's iOS 15 target.
+
 The menu uses TheMealDB's development API key `1`. It shows saved meals first,
 refreshes from the API, and keeps cached meals visible if a refresh fails. Browse
 searches the loaded meals by name or category. Meal cards, featured banners, and
 Hot Offers open details. Favourites are stored under `Users/{uid}.favorites` and
 can be opened from the heart icon.
 
-The cart groups repeated meals by quantity and updates the total as items are
-added, decreased, or removed. TheMealDB has no prices, so each meal gets a stable
+The cart groups repeated meals by quantity, saves them locally per signed-in
+user, and restores them at startup. Checkout adds fixed $3.99 delivery and $2.45
+taxes/fees to the meal subtotal; saved order totals use the same calculation.
+TheMealDB has no prices, so each meal gets a stable
 demo price and rating derived from its id. When TheMealDB leaves `strArea` empty
 for a known meal, the app uses a country identified by that meal's recipe source.
 Other unknown origins remain unfilled. Placing an order saves it to
 `Users/{uid}/Orders/{orderId}` with its items, total, payment method, and payment
-status, then clears the cart. Cash orders are marked `dueOnDelivery`. Card payment
-is simulated: no card details are collected and nothing is charged. The Orders tab
+status, then clears the cart. Cash orders are marked `dueOnDelivery`. Card is a
+selection only: no card details are collected and no charge is attempted; card
+orders are marked `pending` until a real payment gateway is integrated. The Orders tab
 stays a placeholder until order history is loaded in Phase 6.
 
 The sign-up form stores `id`, `fullName`, and `email` in `Users/{uid}`. A failed

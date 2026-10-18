@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/formatting/price_formatter.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/datasources/device_location_source.dart';
 import '../../injection.dart';
 import '../blocs/auth_cubit.dart';
 import '../blocs/cart_bloc.dart';
@@ -9,26 +12,43 @@ import '../blocs/cart_event.dart';
 import '../blocs/cart_state.dart';
 import '../blocs/checkout_cubit.dart';
 import '../blocs/checkout_state.dart';
-import '../widgets/app_header_actions.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/cart_checkout_panel.dart';
 import '../widgets/cart_item_tile.dart';
 
-class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+class CartScreen extends StatefulWidget {
+  const CartScreen({
+    super.key,
+    this.locationSource = const DeviceLocationSource(),
+  });
+
+  final DeviceLocationSource locationSource;
 
   static void open(BuildContext context) {
     final userId = context.read<AuthCubit>().state.user?.id;
     if (userId == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => BlocProvider(
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      builder: (_) => FractionallySizedBox(
+        heightFactor: 0.9,
+        child: BlocProvider(
           create: (_) => locator<CheckoutCubit>(param1: userId),
           child: const CartScreen(),
         ),
       ),
     );
   }
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  bool _checkout = false;
 
   @override
   Widget build(BuildContext context) => MultiBlocListener(
@@ -38,8 +58,10 @@ class CartScreen extends StatelessWidget {
             previous.items.isNotEmpty &&
             current.items.isEmpty &&
             !current.checkedOut,
-        listener: (context, _) =>
-            showAppSnackBar(context, AppStrings.cartEmptied),
+        listener: (context, _) {
+          showAppSnackBar(context, AppStrings.cartEmptied);
+          if (_checkout) setState(() => _checkout = false);
+        },
       ),
       BlocListener<CheckoutCubit, CheckoutState>(
         listenWhen: (_, current) => current.message != null,
@@ -54,24 +76,111 @@ class CartScreen extends StatelessWidget {
     ],
     child: Scaffold(
       appBar: AppBar(
-        title: const Text(AppStrings.cart),
-        actions: const [ThemeToggleButton(), SizedBox(width: 8)],
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Text(
+          _checkout ? AppStrings.checkout : AppStrings.cart,
+          style: const TextStyle(
+            fontFamily: AppTheme.sectionFont,
+            fontSize: 26,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        leading: IconButton(
+          tooltip: _checkout ? AppStrings.back : AppStrings.close,
+          icon: const Icon(Icons.chevron_left, size: 32),
+          onPressed: () => _checkout
+              ? setState(() => _checkout = false)
+              : Navigator.of(context).pop(),
+        ),
       ),
       body: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
-          if (state.items.isEmpty) return const _EmptyCart();
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, index) => CartItemTile(state.items[index]),
+          if (state.items.isEmpty) {
+            return const _EmptyCart();
+          }
+          if (_checkout) {
+            return CartCheckoutPanel(
+              state,
+              locationSource: widget.locationSource,
+            );
+          }
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
+                  ),
+                  itemCount: state.items.length,
+                  itemBuilder: (context, index) =>
+                      CartItemTile(state.items[index]),
+                ),
+              ),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              AppStrings.total,
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Text(
+                            PriceFormatter.format(state.totalCents),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: SizedBox(
+                              height: 48,
+                              child: FilledButton(
+                                onPressed: () =>
+                                    setState(() => _checkout = true),
+                                child: const Text(
+                                  AppStrings.continueToCheckout,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton(
+                                onPressed: () => context.read<CartBloc>().add(
+                                  const EmptyCart(),
+                                ),
+                                child: const Text(
+                                  AppStrings.clearCart,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           );
         },
-      ),
-      bottomNavigationBar: BlocBuilder<CartBloc, CartState>(
-        builder: (context, state) => state.items.isEmpty
-            ? const SizedBox.shrink()
-            : CartCheckoutPanel(state),
       ),
     ),
   );

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/theme/app_theme.dart';
 import '../blocs/cart_bloc.dart';
 import '../blocs/cart_state.dart';
 import '../blocs/favourites_cubit.dart';
@@ -51,6 +52,8 @@ class AppHeaderActions extends StatelessWidget {
       if (showTheme) ThemeToggleButton(iconColor: iconColor),
       BlocBuilder<FavouritesCubit, FavouritesState>(
         builder: (context, state) => Badge(
+          backgroundColor: AppTheme.badgeGreen,
+          textColor: Colors.white,
           isLabelVisible: state.count > 0,
           offset: const Offset(-7, 4),
           label: Text('${state.count}'),
@@ -59,15 +62,7 @@ class AppHeaderActions extends StatelessWidget {
             color: iconColor,
             onPressed: () {
               if (onFavoritesPage) return;
-              final favourites = context.read<FavouritesCubit>();
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => BlocProvider.value(
-                    value: favourites,
-                    child: const FavouritesScreen(),
-                  ),
-                ),
-              );
+              FavouritesScreen.open(context);
             },
             icon: Icon(
               onFavoritesPage ? Icons.favorite : Icons.favorite_border,
@@ -82,6 +77,8 @@ class AppHeaderActions extends StatelessWidget {
           showAppSnackBar(context, AppStrings.mealAdded);
         },
         builder: (context, state) => Badge(
+          backgroundColor: AppTheme.badgeGreen,
+          textColor: Colors.white,
           isLabelVisible: state.count > 0,
           offset: const Offset(-7, 4),
           label: Text('${state.count}'),

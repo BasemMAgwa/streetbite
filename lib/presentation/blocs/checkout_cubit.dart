@@ -40,9 +40,11 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         CheckoutState(
           payment: payment,
           orderPlaced: true,
-          message: order.paymentStatus == PaymentStatus.paid
-              ? AppStrings.orderPlacedPaid
-              : AppStrings.orderPlacedCash,
+          message: switch (order.paymentStatus) {
+            PaymentStatus.paid => AppStrings.orderPlacedPaid,
+            PaymentStatus.dueOnDelivery => AppStrings.orderPlacedCash,
+            PaymentStatus.pending => AppStrings.orderPlacedCardPending,
+          },
         ),
       );
     } catch (error) {

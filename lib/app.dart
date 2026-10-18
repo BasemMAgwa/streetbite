@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/theme/app_theme.dart';
+import 'data/datasources/cart_local_data_source.dart';
+import 'data/datasources/device_location_source.dart';
 import 'injection.dart';
 import 'presentation/blocs/auth_cubit.dart';
 import 'presentation/blocs/auth_state.dart';
 import 'presentation/blocs/cart_bloc.dart';
+import 'presentation/blocs/cart_event.dart';
 import 'presentation/blocs/theme_bloc.dart';
 import 'presentation/blocs/theme_event.dart';
 import 'presentation/screens/home_screen.dart';
@@ -25,7 +30,10 @@ class StreetBiteApp extends StatelessWidget {
           create: (_) =>
               ThemeBloc(SharedPreferencesAsync())..add(const LoadTheme()),
         ),
-        BlocProvider(create: (_) => CartBloc()),
+        BlocProvider(
+          create: (_) =>
+              CartBloc(CartLocalDataSource(SharedPreferencesAsync())),
+        ),
       ],
       child: const _AppView(),
     );
@@ -43,41 +51,62 @@ class _AppViewState extends State<_AppView> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(const DeviceLocationSource().requestPermission());
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocConsumer<AuthCubit, AuthState>(
+    return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
-          current.message != null && previous.message != current.message,
+          previous.status != current.status ||
+          previous.user?.id != current.user?.id,
       listener: (context, state) {
-        _messengerKey.currentState
-          ?..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(state.message!)));
+        final userId = state.user?.id;
+        context.read<CartBloc>().add(
+          state.status == AuthStatus.authenticated && userId != null
+              ? RestoreCart(userId)
+              : const ResetCart(),
+        );
       },
-      builder: (context, state) => MaterialApp(
-        title: 'StreetBite',
-        debugShowCheckedModeBanner: false,
-        scaffoldMessengerKey: _messengerKey,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: context.watch<ThemeBloc>().state,
-        home: state.status == AuthStatus.authenticated
-            ? const HomeScreen(key: ValueKey('home'))
-            : AnimatedSwitcher(
-                duration: const Duration(milliseconds: 450),
-                switchInCurve: Curves.easeInOut,
-                switchOutCurve: Curves.easeInOut,
-                transitionBuilder: (child, animation) =>
-                    FadeTransition(opacity: animation, child: child),
-                child: switch (state.status) {
-                  AuthStatus.initial => SplashScreen(
-                    key: const ValueKey('splash'),
-                    onTap: context.read<AuthCubit>().completeSplash,
-                  ),
-                  AuthStatus.authenticated => const SizedBox.shrink(),
-                  AuthStatus.unauthenticated => const LoginScreen(
-                    key: ValueKey('login'),
-                  ),
-                },
-              ),
+      child: BlocConsumer<AuthCubit, AuthState>(
+        listenWhen: (previous, current) =>
+            current.message != null && previous.message != current.message,
+        listener: (context, state) {
+          _messengerKey.currentState
+            ?..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(state.message!)));
+        },
+        builder: (context, state) => MaterialApp(
+          title: 'StreetBite',
+          debugShowCheckedModeBanner: false,
+          scaffoldMessengerKey: _messengerKey,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: context.watch<ThemeBloc>().state,
+          home: state.status == AuthStatus.authenticated
+              ? const HomeScreen(key: ValueKey('home'))
+              : AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 450),
+                  switchInCurve: Curves.easeInOut,
+                  switchOutCurve: Curves.easeInOut,
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
+                  child: switch (state.status) {
+                    AuthStatus.initial => SplashScreen(
+                      key: const ValueKey('splash'),
+                      onTap: context.read<AuthCubit>().completeSplash,
+                    ),
+                    AuthStatus.authenticated => const SizedBox.shrink(),
+                    AuthStatus.unauthenticated => const LoginScreen(
+                      key: ValueKey('login'),
+                    ),
+                  },
+                ),
+        ),
       ),
     );
   }

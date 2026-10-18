@@ -1,6 +1,7 @@
 import '../entities/cart_item.dart';
 import '../entities/order.dart';
 import '../entities/order_failure.dart';
+import '../entities/order_pricing.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/payment_method.dart';
 
@@ -15,7 +16,7 @@ class PlaceOrder {
     required PaymentMethod payment,
   }) async {
     if (items.isEmpty) throw const OrderFailure(OrderFailureType.emptyCart);
-    final total = items.fold<int>(0, (sum, item) => sum + item.totalCents);
+    final total = OrderPricing.totalCents(items);
     final status = await payment.pay(total);
     final order = Order(
       userId: userId,
