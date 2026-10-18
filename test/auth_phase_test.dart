@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
@@ -10,6 +11,7 @@ import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
 import 'package:streetbite/data/datasources/cash_payment_method.dart';
 import 'package:streetbite/data/datasources/cart_local_data_source.dart';
+import 'package:streetbite/data/datasources/vendor_locations.dart';
 import 'package:streetbite/domain/entities/auth_failure.dart';
 import 'package:streetbite/domain/entities/cart_item.dart';
 import 'package:streetbite/domain/entities/favourites_failure.dart';
@@ -34,6 +36,7 @@ import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/meal_details_screen.dart';
 import 'package:streetbite/presentation/screens/signup_screen.dart';
 import 'package:streetbite/presentation/screens/splash_screen.dart';
+import 'package:streetbite/presentation/screens/vendor_map_screen.dart';
 import 'package:streetbite/presentation/widgets/hot_offers.dart';
 import 'package:streetbite/presentation/widgets/home_menu_shimmer.dart';
 import 'package:streetbite/presentation/widgets/meal_card.dart';
@@ -470,9 +473,27 @@ void main() {
     await tester.tap(find.byTooltip(AppStrings.close));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.browse).last);
+    await tester.tap(find.text(AppStrings.vendors).last);
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.searchMeals), findsOneWidget);
+    expect(find.byType(VendorMapScreen), findsOneWidget);
+    expect(find.text(AppStrings.nearbyVendors), findsOneWidget);
+    final vendorMarkers = tester
+        .widget<GoogleMap>(find.byType(GoogleMap))
+        .markers;
+    expect(VendorLocations.all.map((vendor) => vendor.city).toSet().length, 6);
+    expect(vendorMarkers.length, VendorLocations.all.length);
+    for (final vendor in VendorLocations.all) {
+      final marker = vendorMarkers.singleWhere(
+        (marker) => marker.markerId.value == vendor.id,
+      );
+      expect(marker.infoWindow.title, contains(vendor.name));
+      expect(marker.infoWindow.snippet, contains(vendor.cuisine));
+      expect(marker.infoWindow.snippet, contains('★'));
+      expect(
+        marker.infoWindow.snippet,
+        contains(vendor.rating.toStringAsFixed(1)),
+      );
+    }
     await tester.tap(find.text(AppStrings.orders).last);
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.noOrders), findsOneWidget);
@@ -632,7 +653,10 @@ void main() {
       matching: find.byType(Badge),
     );
     expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
-    expect(tester.widget<Badge>(cartBadge).backgroundColor, AppTheme.badgeGreen);
+    expect(
+      tester.widget<Badge>(cartBadge).backgroundColor,
+      AppTheme.badgeGreen,
+    );
     expect(find.text(AppStrings.removeFromCart), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.removeFromCart));

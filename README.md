@@ -32,10 +32,11 @@ to the app IDs and signing certificates. The iOS map uses SDK 9 for the
 project's iOS 15 target.
 
 The menu uses TheMealDB's development API key `1`. It shows saved meals first,
-refreshes from the API, and keeps cached meals visible if a refresh fails. Browse
-searches the loaded meals by name or category. Meal cards, featured banners, and
-Hot Offers open details. Favourites are stored under `Users/{uid}.favorites` and
-can be opened from the heart icon.
+refreshes from the API, and keeps cached meals visible if a refresh fails. Meal
+cards, featured banners, and Hot Offers open details. The Vendors tab shows a
+Google Map with six sample vendors across Egyptian cities; tapping a marker
+shows its name, cuisine, and rating. Favourites are stored under
+`Users/{uid}.favorites` and can be opened from the heart icon.
 
 The cart groups repeated meals by quantity, saves them locally per signed-in
 user, and restores them at startup. Checkout adds fixed $3.99 delivery and $2.45

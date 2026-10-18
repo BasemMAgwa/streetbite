@@ -41,13 +41,13 @@ class AppStrings {
   static const serviceUnavailable = 'Service is unavailable. Please try again.';
   static const tryAgain = 'Try again';
   static const home = 'Home';
-  static const browse = 'Browse';
+  static const vendors = 'Vendors';
+  static const nearbyVendors = 'Nearby Vendors';
   static const orders = 'Orders';
   static const profile = 'Profile';
   static const recommended = 'Recommended';
   static const hotOffers = 'Hot Offers';
   static const liveMenu = 'Live Menu';
-  static const browseAll = 'Browse all';
   static const addToCart = 'Add to cart';
   static const removeFromCart = 'Remove from cart';
   static const cart = 'Cart';
@@ -105,5 +105,4 @@ class AppStrings {
   static const noOrders = 'Your orders will appear here.';
   static const noFavorites = 'Your favorites will appear here.';
   static const hotFlag = 'HOT';
-  static const searchMeals = 'Search meals';
 }

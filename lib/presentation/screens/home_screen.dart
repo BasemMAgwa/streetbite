@@ -17,9 +17,9 @@ import '../widgets/featured_meals.dart';
 import '../widgets/hot_offers.dart';
 import '../widgets/home_menu_shimmer.dart';
 import '../widgets/menu_grid.dart';
-import 'browse_screen.dart';
 import 'placeholder_screen.dart';
 import 'profile_screen.dart';
+import 'vendor_map_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -64,7 +64,7 @@ class _HomeViewState extends State<_HomeView> {
       ),
       body: switch (_tab) {
         0 => const _HomeFeed(),
-        1 => const BrowseScreen(),
+        1 => const VendorMapScreen(),
         2 => const PlaceholderScreen(
           title: AppStrings.orders,
           message: AppStrings.noOrders,
@@ -94,12 +94,15 @@ class _HomeViewState extends State<_HomeView> {
                 label: AppStrings.home,
               ),
               BottomNavigationBarItem(
-                icon: _TabIcon('assets/images/browse_icon.svg', AppTheme.muted),
+                icon: _TabIcon(
+                  'assets/images/browse_icon.svg',
+                  AppTheme.muted,
+                ),
                 activeIcon: _TabIcon(
                   'assets/images/browse_icon.svg',
                   AppTheme.green,
                 ),
-                label: AppStrings.browse,
+                label: AppStrings.vendors,
               ),
               BottomNavigationBarItem(
                 icon: _TabIcon('assets/images/orders_icon.svg', AppTheme.muted),
