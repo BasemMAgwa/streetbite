@@ -9,3 +9,19 @@ class AddMealToCart extends CartEvent {
 
   final Meal meal;
 }
+
+class DecreaseMealQuantity extends CartEvent {
+  const DecreaseMealQuantity(this.mealId);
+
+  final String mealId;
+}
+
+class RemoveMealFromCart extends CartEvent {
+  const RemoveMealFromCart(this.mealId);
+
+  final String mealId;
+}
+
+class ClearCart extends CartEvent {
+  const ClearCart();
+}

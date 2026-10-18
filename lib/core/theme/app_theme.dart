@@ -13,6 +13,15 @@ class AppTheme {
 
   static ThemeData get light => _build(Brightness.light);
 
+  static Color cardColor(ThemeData theme) => theme.brightness == Brightness.dark
+      ? darkCard
+      : theme.colorScheme.surfaceContainerLow;
+
+  static BorderSide cardBorder(ThemeData theme) =>
+      theme.brightness == Brightness.dark
+      ? const BorderSide(color: darkCardBorder)
+      : BorderSide.none;
+
   static ThemeData get dark => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {

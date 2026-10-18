@@ -10,13 +10,22 @@ class MealModel extends Meal {
     required super.instructions,
   });
 
+  factory MealModel.fromMeal(Meal meal) => MealModel(
+    id: meal.id,
+    name: meal.name,
+    category: meal.category,
+    imageUrl: meal.imageUrl,
+    area: meal.area,
+    instructions: meal.instructions,
+  );
+
   factory MealModel.fromJson(Map<String, dynamic> json) {
     return MealModel(
       id: json['idMeal'] as String? ?? '',
       name: json['strMeal'] as String? ?? '',
       category: json['strCategory'] as String? ?? '',
       imageUrl: json['strMealThumb'] as String? ?? '',
-      area: json['strArea'] as String? ?? '',
+      area: _area(json),
       instructions: json['strInstructions'] as String? ?? '',
     );
   }
@@ -29,4 +38,21 @@ class MealModel extends Meal {
     'strArea': area,
     'strInstructions': instructions,
   };
+
+  static String _area(Map<String, dynamic> json) {
+    final area = (json['strArea'] as String? ?? '').trim();
+    if (area.isNotEmpty) return area;
+
+    // These TheMealDB records have no strArea; their recipe sources identify
+    // the country. Keep unknown records blank rather than guessing an origin.
+    return const {
+          '53436': 'Armenian',
+          '53443': 'Aruban',
+          '53450': 'Bahamian',
+          '53439': 'Aruban',
+          '53399': 'Afghan',
+          '53470': 'Botswanan',
+        }[json['idMeal']] ??
+        '';
+  }
 }

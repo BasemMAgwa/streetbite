@@ -7,26 +7,41 @@ import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
+import 'package:streetbite/data/datasources/cash_payment_method.dart';
 import 'package:streetbite/domain/entities/auth_failure.dart';
+import 'package:streetbite/domain/entities/favourites_failure.dart';
 import 'package:streetbite/domain/entities/meal.dart';
+import 'package:streetbite/domain/entities/order.dart';
 import 'package:streetbite/domain/repositories/auth_repository.dart';
+import 'package:streetbite/domain/repositories/favourites_repository.dart';
 import 'package:streetbite/domain/repositories/meal_repository.dart';
+import 'package:streetbite/domain/repositories/order_repository.dart';
+import 'package:streetbite/domain/usecases/place_order.dart';
 import 'package:streetbite/domain/usecases/sign_in.dart';
 import 'package:streetbite/domain/usecases/sign_out.dart';
 import 'package:streetbite/domain/usecases/sign_up.dart';
 import 'package:streetbite/injection.dart';
 import 'package:streetbite/presentation/blocs/auth_cubit.dart';
 import 'package:streetbite/presentation/blocs/auth_state.dart';
+import 'package:streetbite/presentation/blocs/checkout_cubit.dart';
+import 'package:streetbite/presentation/blocs/favourites_cubit.dart';
 import 'package:streetbite/presentation/blocs/menu_cubit.dart';
 import 'package:streetbite/presentation/screens/login_screen.dart';
 import 'package:streetbite/presentation/screens/home_screen.dart';
+import 'package:streetbite/presentation/screens/meal_details_screen.dart';
 import 'package:streetbite/presentation/screens/signup_screen.dart';
 import 'package:streetbite/presentation/screens/splash_screen.dart';
 import 'package:streetbite/presentation/widgets/hot_offers.dart';
 import 'package:streetbite/presentation/widgets/home_menu_shimmer.dart';
 import 'package:streetbite/presentation/widgets/meal_card.dart';
+import 'package:streetbite/presentation/widgets/meal_image.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+class FakeOrderRepository implements OrderRepository {
+  @override
+  Future<String> placeOrder(Order order) async => 'order-1';
+}
 
 class FakeAuthRepository implements AuthRepository {
   AppUser? signedInUser;
@@ -59,6 +74,10 @@ AuthCubit makeCubit(FakeAuthRepository repository) => AuthCubit(
 );
 
 class FakeMealRepository implements MealRepository {
+  FakeMealRepository({this.longInstructions = false});
+
+  final bool longInstructions;
+
   @override
   Future<List<Meal>> getCachedMeals() async => [];
 
@@ -71,7 +90,9 @@ class FakeMealRepository implements MealRepository {
       category: 'Dinner',
       imageUrl: '',
       area: '',
-      instructions: '',
+      instructions: longInstructions
+          ? List.filled(30, 'Prepare the meal and serve it fresh.').join(' ')
+          : '',
     ),
   );
 }
@@ -83,10 +104,61 @@ class PendingMealRepository extends FakeMealRepository {
   Future<List<Meal>> refreshMeals() => result.future;
 }
 
+class FakeFavouritesRepository implements FavouritesRepository {
+  final saved = <Meal>[];
+  final changes = StreamController<List<Meal>>.broadcast();
+  bool failAdd = false;
+  Completer<void>? pendingAdd;
+
+  @override
+  Stream<List<Meal>> watchFavourites(String userId) async* {
+    yield List.of(saved);
+    yield* changes.stream;
+  }
+
+  @override
+  Future<void> addFavourite(String userId, Meal meal) async {
+    await pendingAdd?.future;
+    if (failAdd) {
+      throw const FavouritesFailure(FavouritesFailureType.network);
+    }
+    saved.add(meal);
+    changes.add(List.of(saved));
+  }
+
+  @override
+  Future<void> removeFavourite(String userId, String mealId) async {
+    saved.removeWhere((meal) => meal.id == mealId);
+    changes.add(List.of(saved));
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
+  });
+  test('favourites show a friendly network error and stay unchanged', () async {
+    final repository = FakeFavouritesRepository()..failAdd = true;
+    final cubit = FavouritesCubit(repository, 'uid-1')..load();
+    await cubit.stream.firstWhere((state) => !state.isLoading);
+
+    await cubit.toggle(
+      const Meal(
+        id: '1',
+        name: 'Meal',
+        category: 'Dinner',
+        imageUrl: '',
+        area: '',
+        instructions: '',
+      ),
+    );
+
+    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.isSaving, false);
+    expect(repository.saved, isEmpty);
+    await cubit.close();
+    await repository.changes.close();
   });
   test(
     'authentication errors stay on the form with a friendly message',
@@ -239,6 +311,7 @@ void main() {
     final cubit = makeCubit(repository);
     locator.registerSingleton<AuthCubit>(cubit);
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
+    locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
     addTearDown(() async {
       await locator.reset();
     });
@@ -281,6 +354,14 @@ void main() {
       );
     locator.registerSingleton<AuthCubit>(makeCubit(repository));
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
+    locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
+    locator.registerFactoryParam<CheckoutCubit, String, void>(
+      (userId, _) => CheckoutCubit(
+        PlaceOrder(FakeOrderRepository()),
+        userId,
+        const [CashPaymentMethod()],
+      ),
+    );
     addTearDown(() async => locator.reset());
 
     await tester.pumpWidget(const StreetBiteApp());
@@ -369,6 +450,7 @@ void main() {
     final meals = PendingMealRepository();
     locator.registerSingleton<AuthCubit>(makeCubit(repository));
     locator.registerFactory<MenuCubit>(() => MenuCubit(meals));
+    locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
     addTearDown(() async => locator.reset());
 
     await tester.pumpWidget(const StreetBiteApp());
@@ -387,5 +469,154 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
     await tester.pumpAndSettle();
     expect(find.text(AppStrings.liveMenu), findsOneWidget);
+  });
+
+  testWidgets('meal details save a favourite and keep the top actions', (
+    tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(327, 707);
+    final auth = FakeAuthRepository()
+      ..signedInUser = const AppUser(
+        id: 'uid-1',
+        fullName: 'Sara Ali',
+        email: 'sara@example.com',
+      );
+    final favourites = FakeFavouritesRepository()
+      ..pendingAdd = Completer<void>();
+    locator.registerSingleton<AuthCubit>(makeCubit(auth));
+    locator.registerFactory<MenuCubit>(
+      () => MenuCubit(FakeMealRepository(longInstructions: true)),
+    );
+    locator.registerSingleton<FavouritesRepository>(favourites);
+    addTearDown(() async => locator.reset());
+
+    await tester.pumpWidget(const StreetBiteApp());
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Meal 0').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MealDetailsScreen), findsOneWidget);
+    final route = ModalRoute.of(tester.element(find.byType(MealDetailsScreen)));
+    expect((route?.settings.arguments as Meal).id, '0');
+    expect(find.byTooltip(AppStrings.darkMode), findsOneWidget);
+    expect(find.byTooltip(AppStrings.favorites), findsOneWidget);
+    expect(find.byTooltip(AppStrings.cart), findsOneWidget);
+    expect(find.text(AppStrings.category), findsOneWidget);
+    expect(find.text(AppStrings.origin), findsOneWidget);
+    expect(find.text(AppStrings.instructions), findsOneWidget);
+    final detailsScaffold = tester.widget<Scaffold>(
+      find.descendant(
+        of: find.byType(MealDetailsScreen),
+        matching: find.byType(Scaffold),
+      ),
+    );
+    expect(detailsScaffold.extendBodyBehindAppBar, true);
+    expect(
+      (detailsScaffold.appBar! as AppBar).backgroundColor,
+      Colors.transparent,
+    );
+    final heroImage = find.descendant(
+      of: find.byType(MealDetailsScreen),
+      matching: find.byType(MealImage),
+    );
+    expect(tester.getTopLeft(heroImage).dy, 0);
+    final topBar = find.descendant(
+      of: find.byType(MealDetailsScreen),
+      matching: find.byType(AppBar),
+    );
+    expect(tester.widget<AppBar>(topBar).foregroundColor, Colors.white);
+    expect(
+      tester
+          .element(find.byType(MealDetailsScreen))
+          .read<FavouritesCubit>()
+          .state
+          .isLoading,
+      false,
+    );
+
+    await tester.tap(find.text(AppStrings.addToFavorites));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(favourites.saved, isEmpty);
+    favourites.pendingAdd!.complete();
+    await tester.pumpAndSettle();
+    expect(favourites.saved.single.id, '0');
+    expect(find.text(AppStrings.removeFromFavorites), findsOneWidget);
+    final favoritesBadge = find.ancestor(
+      of: find.byTooltip(AppStrings.favorites),
+      matching: find.byType(Badge),
+    );
+    expect(tester.widget<Badge>(favoritesBadge).isLabelVisible, true);
+    expect(
+      find.descendant(of: favoritesBadge, matching: find.text('1')),
+      findsOneWidget,
+    );
+
+    await tester.drag(
+      find.descendant(
+        of: find.byType(MealDetailsScreen),
+        matching: find.byType(ListView),
+      ),
+      const Offset(0, -400),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<AppBar>(topBar).foregroundColor,
+      Theme.of(tester.element(topBar)).appBarTheme.foregroundColor,
+    );
+    expect(
+      tester.widget<AppBar>(topBar).backgroundColor,
+      Theme.of(tester.element(topBar)).scaffoldBackgroundColor,
+    );
+    await tester.drag(
+      find.descendant(
+        of: find.byType(MealDetailsScreen),
+        matching: find.byType(ListView),
+      ),
+      const Offset(0, 400),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppBar>(topBar).foregroundColor, Colors.white);
+
+    await tester.tap(find.text(AppStrings.addToCart));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text(AppStrings.mealAdded), findsOneWidget);
+    final cartBadge = find.ancestor(
+      of: find.byTooltip(AppStrings.cart),
+      matching: find.byType(Badge),
+    );
+    expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
+    expect(find.text(AppStrings.removeFromCart), findsOneWidget);
+
+    await tester.tap(find.text(AppStrings.removeFromCart));
+    await tester.pumpAndSettle();
+    expect(find.text(AppStrings.addToCart), findsOneWidget);
+    expect(tester.widget<Badge>(cartBadge).isLabelVisible, false);
+
+    await tester.tap(find.byTooltip(AppStrings.favorites));
+    await tester.pumpAndSettle();
+    expect(find.text('Meal 0'), findsWidgets);
+    expect(tester.takeException(), isNull);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.removeFromFavorites));
+    await tester.pumpAndSettle();
+    expect(favourites.saved, isEmpty);
+    expect(find.text(AppStrings.addToFavorites), findsOneWidget);
+    expect(tester.widget<Badge>(favoritesBadge).isLabelVisible, false);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(MealCard).first);
+    await tester.pumpAndSettle();
+    expect(find.byType(MealDetailsScreen), findsOneWidget);
   });
 }

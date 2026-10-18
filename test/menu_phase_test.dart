@@ -82,6 +82,23 @@ void main() {
     expect(meals.single.category, meal.category);
   });
 
+  test('known meals without an API area show a sourced origin', () {
+    final jajek = MealModel.fromJson({
+      'idMeal': '53436',
+      'strMeal': 'Jajek',
+      'strArea': '',
+    });
+    expect(jajek.area, 'Armenian');
+    expect(jajek.rating, inInclusiveRange(4.0, 4.9));
+
+    final unknown = MealModel.fromJson({
+      'idMeal': 'unknown',
+      'strMeal': 'Unknown meal',
+      'strArea': '',
+    });
+    expect(unknown.area, isEmpty);
+  });
+
   test('offline refresh keeps cached meals visible', () async {
     final cubit = MenuCubit(OfflineMealRepository());
     await cubit.loadMeals();

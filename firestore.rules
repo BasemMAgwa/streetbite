@@ -7,6 +7,14 @@ service cloud.firestore {
         && request.auth.uid == userId
         && request.resource.data.id == userId;
       allow delete: if request.auth != null && request.auth.uid == userId;
+
+      match /Orders/{orderId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.userId == userId
+          && request.resource.data.id == orderId;
+      }
     }
   }
 }

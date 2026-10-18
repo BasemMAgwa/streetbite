@@ -5,16 +5,24 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/datasources/auth_remote_data_source.dart';
+import 'data/datasources/card_payment_method.dart';
+import 'data/datasources/cash_payment_method.dart';
 import 'data/datasources/meal_local_data_source.dart';
 import 'data/datasources/meal_remote_data_source.dart';
 import 'data/repositories/auth_repository_impl.dart';
+import 'data/repositories/favourites_repository_impl.dart';
 import 'data/repositories/meal_repository_impl.dart';
+import 'data/repositories/order_repository_impl.dart';
 import 'domain/repositories/auth_repository.dart';
+import 'domain/repositories/favourites_repository.dart';
 import 'domain/repositories/meal_repository.dart';
+import 'domain/repositories/order_repository.dart';
+import 'domain/usecases/place_order.dart';
 import 'domain/usecases/sign_in.dart';
 import 'domain/usecases/sign_out.dart';
 import 'domain/usecases/sign_up.dart';
 import 'presentation/blocs/auth_cubit.dart';
+import 'presentation/blocs/checkout_cubit.dart';
 import 'presentation/blocs/menu_cubit.dart';
 
 final locator = GetIt.instance;
@@ -39,6 +47,19 @@ void configureDependencies() {
   locator.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   locator.registerLazySingleton<FirebaseFirestore>(
     () => FirebaseFirestore.instance,
+  );
+  locator.registerLazySingleton<FavouritesRepository>(
+    () => FavouritesRepositoryImpl(locator()),
+  );
+  locator.registerLazySingleton<OrderRepository>(
+    () => OrderRepositoryImpl(locator()),
+  );
+  locator.registerLazySingleton(() => PlaceOrder(locator()));
+  locator.registerFactoryParam<CheckoutCubit, String, void>(
+    (userId, _) => CheckoutCubit(locator(), userId, const [
+      CashPaymentMethod(),
+      CardPaymentMethod(),
+    ]),
   );
   locator.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSource(locator(), locator()),
