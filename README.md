@@ -128,3 +128,7 @@ The current Android release build is signed with the Android debug certificate c
 ## Checks
 
 Run `dart format .`, `flutter analyze`, and `flutter test` from this directory. Tests are organized by feature and use `BaseTest` and feature helpers in `test/automation/` for shared widget setup and feature actions.
+
+## QA and Appium
+
+The [QA workspace](qa/README.md) contains the manual test plan, 32 test cases, execution log, traceability matrix, closure summary, and Java Appium project. Appium covers the requested Login and Home flows; its setup and run commands are in `qa/README.md`. Physical-device results and Jira defects are recorded only after execution.
