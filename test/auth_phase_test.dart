@@ -31,6 +31,7 @@ import 'package:streetbite/presentation/blocs/auth_state.dart';
 import 'package:streetbite/presentation/blocs/checkout_cubit.dart';
 import 'package:streetbite/presentation/blocs/favourites_cubit.dart';
 import 'package:streetbite/presentation/blocs/menu_cubit.dart';
+import 'package:streetbite/presentation/blocs/orders_cubit.dart';
 import 'package:streetbite/presentation/screens/login_screen.dart';
 import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/meal_details_screen.dart';
@@ -47,6 +48,9 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 class FakeOrderRepository implements OrderRepository {
   @override
   Future<String> placeOrder(Order order) async => 'order-1';
+
+  @override
+  Stream<List<Order>> watchOrders(String userId) => Stream.value([]);
 }
 
 class FakeAuthRepository implements AuthRepository {
@@ -398,6 +402,9 @@ void main() {
     locator.registerSingleton<AuthCubit>(makeCubit(repository));
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
     locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
+    locator.registerFactoryParam<OrdersCubit, String, void>(
+      (userId, _) => OrdersCubit(FakeOrderRepository(), userId),
+    );
     locator.registerFactoryParam<CheckoutCubit, String, void>(
       (userId, _) => CheckoutCubit(
         PlaceOrder(FakeOrderRepository()),

@@ -44,6 +44,17 @@ class AppStrings {
   static const vendors = 'Vendors';
   static const nearbyVendors = 'Nearby Vendors';
   static const orders = 'Orders';
+  static const order = 'Order';
+  static const item = 'item';
+  static const items = 'items';
+  static const today = 'Today';
+  static const yesterday = 'Yesterday';
+  static const daysAgo = 'days ago';
+  static const ordersLoadError =
+      'Could not load your orders. Please try again.';
+  static const paidStatus = 'Paid';
+  static const cashOnDeliveryStatus = 'Cash on delivery';
+  static const pendingStatus = 'Payment pending';
   static const profile = 'Profile';
   static const recommended = 'Recommended';
   static const hotOffers = 'Hot Offers';

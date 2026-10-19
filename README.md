@@ -5,7 +5,8 @@ animated in-app splash, login, sign-up, Firebase Authentication, and user profil
 in the `Users` Firestore collection. Phase 2 adds a live meal menu, featured meals,
 Hot Offers, a cart preview, bottom navigation, and a saved light/dark theme.
 Phase 3 adds meal details and favourites saved to each user's Firestore document.
-Phase 4 adds cart and favourites bottom drawers, checkout, and orders saved to Firestore.
+Phase 4 adds cart and favourites bottom drawers, checkout, orders saved to each
+user's Firestore document, and order history shown live in the Orders tab.
 
 ## Run the app
 
@@ -44,12 +45,14 @@ taxes/fees to the meal subtotal; saved order totals use the same calculation.
 TheMealDB has no prices, so each meal gets a stable
 demo price and rating derived from its id. When TheMealDB leaves `strArea` empty
 for a known meal, the app uses a country identified by that meal's recipe source.
-Other unknown origins remain unfilled. Placing an order saves it to
-`Users/{uid}/Orders/{orderId}` with its items, total, payment method, and payment
-status, then clears the cart. Cash orders are marked `dueOnDelivery`. Card is a
-selection only: no card details are collected and no charge is attempted; card
-orders are marked `pending` until a real payment gateway is integrated. The Orders tab
-stays a placeholder until order history is loaded in Phase 6.
+Other unknown origins remain unfilled. Placing an order saves it to the `orders` map on the user's `Users/{uid}`
+document with its items, total, payment method, and payment status, then clears
+the cart. Cash orders are marked `dueOnDelivery`. Card is a selection only: no
+card details are collected and no charge is attempted; card orders are marked
+`pending` until a real payment gateway is integrated. The Orders tab loads this
+history live from Firestore and shows each order's items, date, total, and
+payment status. Orders written to the older `Users/{uid}/Orders` subcollection by
+earlier builds still appear.
 
 The sign-up form stores `id`, `fullName`, and `email` in `Users/{uid}`. A failed
 profile write is shown as an error, and the newly created Auth account is rolled

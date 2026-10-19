@@ -59,6 +59,9 @@ class FakeOrderRepository implements OrderRepository {
     orders.add(order);
     return 'order-${orders.length}';
   }
+
+  @override
+  Stream<List<Order>> watchOrders(String userId) => Stream.value(orders);
 }
 
 class UnavailableLocationSource extends DeviceLocationSource {

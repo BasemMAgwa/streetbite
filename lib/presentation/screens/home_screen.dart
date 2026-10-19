@@ -10,6 +10,7 @@ import '../blocs/favourites_cubit.dart';
 import '../blocs/favourites_state.dart';
 import '../blocs/menu_cubit.dart';
 import '../blocs/menu_state.dart';
+import '../blocs/orders_cubit.dart';
 import '../blocs/auth_cubit.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/app_snack_bar.dart';
@@ -17,7 +18,7 @@ import '../widgets/featured_meals.dart';
 import '../widgets/hot_offers.dart';
 import '../widgets/home_menu_shimmer.dart';
 import '../widgets/menu_grid.dart';
-import 'placeholder_screen.dart';
+import 'orders_screen.dart';
 import 'profile_screen.dart';
 import 'vendor_map_screen.dart';
 
@@ -65,11 +66,11 @@ class _HomeViewState extends State<_HomeView> {
       body: switch (_tab) {
         0 => const _HomeFeed(),
         1 => const VendorMapScreen(),
-        2 => const PlaceholderScreen(
-          title: AppStrings.orders,
-          message: AppStrings.noOrders,
-          icon: Icons.receipt_long_outlined,
-          showAppBar: false,
+        2 => BlocProvider(
+          create: (_) => locator<OrdersCubit>(
+            param1: context.read<AuthCubit>().state.user!.id,
+          )..load(),
+          child: const OrdersScreen(),
         ),
         _ => const ProfileScreen(),
       },
@@ -94,10 +95,7 @@ class _HomeViewState extends State<_HomeView> {
                 label: AppStrings.home,
               ),
               BottomNavigationBarItem(
-                icon: _TabIcon(
-                  'assets/images/browse_icon.svg',
-                  AppTheme.muted,
-                ),
+                icon: _TabIcon('assets/images/browse_icon.svg', AppTheme.muted),
                 activeIcon: _TabIcon(
                   'assets/images/browse_icon.svg',
                   AppTheme.green,

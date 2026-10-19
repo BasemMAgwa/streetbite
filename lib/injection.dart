@@ -24,6 +24,7 @@ import 'domain/usecases/sign_up.dart';
 import 'presentation/blocs/auth_cubit.dart';
 import 'presentation/blocs/checkout_cubit.dart';
 import 'presentation/blocs/menu_cubit.dart';
+import 'presentation/blocs/orders_cubit.dart';
 
 final locator = GetIt.instance;
 
@@ -53,6 +54,9 @@ void configureDependencies() {
   );
   locator.registerLazySingleton<OrderRepository>(
     () => OrderRepositoryImpl(locator()),
+  );
+  locator.registerFactoryParam<OrdersCubit, String, void>(
+    (userId, _) => OrdersCubit(locator(), userId),
   );
   locator.registerLazySingleton(() => PlaceOrder(locator()));
   locator.registerFactoryParam<CheckoutCubit, String, void>(
