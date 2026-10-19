@@ -5,6 +5,7 @@ import '../../domain/repositories/cart_repository.dart';
 import 'cart_event.dart';
 import 'cart_state.dart';
 
+// BLoC turns cart events into UI state and serializes edits with restoration.
 class CartBloc extends Bloc<CartEvent, CartState> {
   CartBloc([this._storage]) : super(const CartState()) {
     // Restore and edits share one queue, so an early tap cannot overwrite

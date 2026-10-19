@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Single Firestore entry point for the app (SRS requirement).
+// Facade pattern: profile writes use one small entry point for Firestore paths
+// and merge semantics. GetIt registers one lazy instance for reuse.
 class FirestoreService {
   const FirestoreService(this._firestore);
 

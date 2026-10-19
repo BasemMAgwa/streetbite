@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:streetbite/core/constants/message.dart';
 import 'package:streetbite/l10n/app_localizations.dart';
 
@@ -19,6 +17,8 @@ import 'package:streetbite/presentation/blocs/menu_state.dart';
 import 'package:streetbite/presentation/blocs/theme_bloc.dart';
 import 'package:streetbite/presentation/blocs/theme_event.dart';
 import 'package:streetbite/presentation/widgets/featured_meals.dart';
+
+import 'automation/base_automation.dart';
 
 const meal = MealModel(
   id: '52772',
@@ -44,8 +44,7 @@ class OfflineMealRepository implements MealRepository {
 
 void main() {
   setUp(() {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
   });
 
   test('saved meals are restored by a new local data source', () async {

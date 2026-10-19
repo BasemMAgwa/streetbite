@@ -44,6 +44,8 @@ import 'presentation/blocs/profile_lock_cubit.dart';
 
 final locator = GetIt.instance;
 
+// Dependency injection gives blocs and use cases repository contracts instead
+// of concrete Firebase or device services. GetIt owns shared service lifetimes.
 void configureDependencies() {
   locator.registerLazySingleton(
     () => Dio(

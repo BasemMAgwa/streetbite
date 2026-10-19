@@ -9,13 +9,12 @@ import 'package:streetbite/presentation/blocs/locale_event.dart';
 import 'package:streetbite/presentation/l10n/message_localizations.dart';
 import 'package:streetbite/presentation/widgets/app_header_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+import 'automation/base_automation.dart';
 
 void main() {
   setUp(() {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
   });
 
   test('Arabic strings load and spot-check', () {

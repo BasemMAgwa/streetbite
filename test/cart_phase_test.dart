@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:streetbite/core/constants/message.dart';
 import 'package:streetbite/l10n/app_localizations.dart';
 
@@ -32,6 +30,9 @@ import 'package:streetbite/presentation/blocs/cart_state.dart';
 import 'package:streetbite/presentation/blocs/checkout_cubit.dart';
 import 'package:streetbite/presentation/blocs/theme_bloc.dart';
 import 'package:streetbite/presentation/screens/cart_screen.dart';
+
+import 'automation/base_automation.dart';
+import 'automation/cart_automation.dart';
 
 const burger = Meal(
   id: '52772',
@@ -87,8 +88,7 @@ CheckoutCubit checkout(FakeOrderRepository repository) => CheckoutCubit(
 
 void main() {
   test('cart restores quantities per user and clears the saved cart', () async {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
     final storage = CartLocalDataSource(SharedPreferencesAsync());
     final first = CartBloc(storage);
     await send(first, const RestoreCart('user-1'));
@@ -220,8 +220,7 @@ void main() {
   testWidgets('removing the last item shows the empty cart snackbar', (
     tester,
   ) async {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
     final cart = CartBloc()..add(const AddMealToCart(burger));
     addTearDown(cart.close);
     await tester.pumpWidget(
@@ -254,8 +253,7 @@ void main() {
   testWidgets('cart continues to checkout inside the same drawer layout', (
     tester,
   ) async {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
     final cart = CartBloc()..add(const AddMealToCart(burger));
     addTearDown(cart.close);
     await tester.pumpWidget(
@@ -279,14 +277,11 @@ void main() {
       tester.getTopLeft(find.text(enL10n.clearCart)).dy,
       tester.getTopLeft(find.text(enL10n.continueToCheckout)).dy,
     );
-    await tester.tap(find.byTooltip(enL10n.increaseQuantity));
-    await tester.pump();
+    await CartAutomation(tester).increaseQuantity(enL10n);
     expect(cart.state.items.single.quantity, 2);
-    await tester.tap(find.byTooltip(enL10n.decreaseQuantity));
-    await tester.pump();
+    await CartAutomation(tester).decreaseQuantity(enL10n);
     expect(cart.state.items.single.quantity, 1);
-    await tester.tap(find.text(enL10n.continueToCheckout));
-    await tester.pumpAndSettle();
+    await CartAutomation(tester).continueToCheckout(enL10n);
     expect(find.text(enL10n.checkout), findsOneWidget);
     expect(find.text(enL10n.paymentMethod), findsOneWidget);
     expect(

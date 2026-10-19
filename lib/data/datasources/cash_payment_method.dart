@@ -2,6 +2,7 @@ import '../../domain/entities/payment_status.dart';
 import '../../domain/entities/payment_type.dart';
 import '../../domain/repositories/payment_method.dart';
 
+// Strategy pattern: cash supplies its own status through PaymentMethod.
 class CashPaymentMethod implements PaymentMethod {
   const CashPaymentMethod();
 

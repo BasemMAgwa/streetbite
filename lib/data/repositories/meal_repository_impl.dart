@@ -7,13 +7,15 @@ import '../datasources/meal_data_source.dart';
 import '../datasources/meal_local_data_source.dart';
 import '../datasources/meal_remote_data_source.dart';
 
+// Repository pattern hides API and cache details from the domain and UI.
 class MealRepositoryImpl implements MealRepository {
   const MealRepositoryImpl(this._remote, this._local);
 
   final MealRemoteDataSource _remote;
   final MealLocalDataSource _local;
 
-  // Factory selection keeps the source choice in the repository.
+  // Source selection uses the shared MealDataSource interface so both cache
+  // and remote data follow the same loading contract.
   MealDataSource _sourceFor({required bool cached}) =>
       cached ? _local : _remote;
 

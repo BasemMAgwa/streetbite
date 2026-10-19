@@ -1,125 +1,99 @@
 # StreetBite
 
-Flutter food discovery and ordering app. Phase 1 includes a native logo splash,
-animated in-app splash, login, sign-up, Firebase Authentication, and user profiles
-in the `Users` Firestore collection. Phase 2 adds a live meal menu, featured meals,
-Hot Offers, a cart preview, bottom navigation, and a saved light/dark theme.
-Phase 3 adds meal details and favourites saved to each user's Firestore document.
-Phase 4 adds cart and favourites bottom drawers, checkout, orders saved to each
-user's Firestore document, and order history shown live in the Orders tab.
+StreetBite is a Flutter food discovery and ordering demo for Android and iOS. It offers email sign-in, a live meal menu, favourites, a persistent cart, checkout, order history, vendor maps, a protected profile, light/dark themes, and English/Arabic localization with RTL layout.
 
-## Run the app
+## What the app does
 
-1. Install Flutter and run `flutter pub get` in this `streetbite` directory.
-2. In the Firebase project, enable **Authentication → Email/Password** and create
-   a Cloud Firestore database.
-3. The project already contains `lib/firebase_options.dart` and the Android
-   Firebase configuration. If using another Firebase project, run
-   `flutterfire configure` and replace the generated configuration.
-4. Deploy the included `firestore.rules` before testing sign-up:
-   `firebase deploy --only firestore:rules --project streetbite-324a0`.
-   These rules permit each signed-in user to access only `Users/{their uid}`
-   and to create and read orders under `Users/{their uid}/Orders`.
-5. Run `flutter run` on Android or iOS. The current Firebase options support
-   those two platforms.
+- **Account and profile:** Firebase Authentication handles email/password credentials. Firestore stores each user's name, email, optional profile photo, favourites, and orders under `Users/{uid}`. The profile also shows device details. Profile access can require device biometrics; the lock preference persists locally. Photos are picked through the platform picker and stored as compressed base64 in the user document.
+- **Discover:** TheMealDB API supplies the menu. A local cache appears while the app refreshes and remains visible when the network fails. Featured meals, offers, and cards lead to meal details. Six sample vendors across Egyptian cities appear on a Google Map; they are demonstration data, not live vendor locations.
+- **Order:** The cart groups identical meals, saves locally for each signed-in user, and adds fixed $3.99 delivery and $2.45 fees/taxes at checkout. TheMealDB does not provide prices, so the app derives stable demo prices and ratings from meal IDs. Checkout can show the device location. Orders are saved to `Users/{uid}.orders` and streamed in the Orders tab; legacy `Users/{uid}/Orders` entries are still read.
+- **Payment:** Cash orders are `dueOnDelivery`. Card is only a selectable option: no card information is collected and no charge occurs. Card orders stay `pending` until a payment gateway is added.
+- **Language and appearance:** English and Arabic strings are in ARB files. A language toggle and light/dark toggle save their choices through SharedPreferences.
 
-Checkout uses Google Maps with a marker at the device's location. The app
-requests foreground location permission at startup and uses the last known
-position if a fresh fix times out. If location is unavailable, checkout shows a
-retry message and remains usable. Set `MAPS_API_KEY=your-key` in ignored
-`android/local.properties` and `ios/Flutter/Maps.xcconfig`, enable the Maps SDKs
-and billing for that key's Google Cloud project, and restrict production keys
-to the app IDs and signing certificates. The iOS map uses SDK 9 for the
-project's iOS 15 target.
+## Architecture and design patterns
 
-The menu uses TheMealDB's development API key `1`. It shows saved meals first,
-refreshes from the API, and keeps cached meals visible if a refresh fails. Meal
-cards, featured banners, and Hot Offers open details. The Vendors tab shows a
-Google Map with six sample vendors across Egyptian cities; tapping a marker
-shows its name, cuisine, and rating. Favourites are stored under
-`Users/{uid}.favorites` and can be opened from the heart icon.
+The app follows a layered architecture. `presentation` widgets use BLoC/Cubit state. Domain use cases and repository contracts express app behavior. Data sources and repository implementations connect those contracts to Firebase, TheMealDB, local preferences, and device APIs.
 
-The cart groups repeated meals by quantity, saves them locally per signed-in
-user, and restores them at startup. Checkout adds fixed $3.99 delivery and $2.45
-taxes/fees to the meal subtotal; saved order totals use the same calculation.
-TheMealDB has no prices, so each meal gets a stable
-demo price and rating derived from its id. When TheMealDB leaves `strArea` empty
-for a known meal, the app uses a country identified by that meal's recipe source.
-Other unknown origins remain unfilled. Placing an order saves it to the `orders` map on the user's `Users/{uid}`
-document with its items, total, payment method, and payment status, then clears
-the cart. Cash orders are marked `dueOnDelivery`. Card is a selection only: no
-card details are collected and no charge is attempted; card orders are marked
-`pending` until a real payment gateway is integrated. The Orders tab loads this
-history live from Firestore and shows each order's items, date, total, and
-payment status. Orders written to the older `Users/{uid}/Orders` subcollection by
-earlier builds still appear.
+| Pattern | Where | Why |
+| --- | --- | --- |
+| Repository | `lib/domain/repositories/`, `lib/data/repositories/` | Keeps UI and use cases independent of persistence and network APIs. |
+| Dependency injection | `lib/injection.dart` | Registers shared services and injects contracts into use cases and state classes; tests can supply fakes. |
+| BLoC/Cubit | `lib/presentation/blocs/` | Separates events/state and asynchronous work from widgets. Cart events are serialized to avoid restore/edit races. |
+| Strategy | `PaymentMethod` with cash/card implementations | Checkout chooses a payment behavior by type while each method defines its result status. |
+| Facade | `FirestoreService` | Centralizes user document access and merge writes for profile data. |
 
-The sign-up form stores `id`, `fullName`, and `email` in `Users/{uid}`. A failed
-profile write is shown as an error, and the newly created Auth account is rolled
-back where Firebase permits. Passwords are managed only by Firebase Auth.
+## File structure
 
-## Structure
+```text
+streetbite/
+├── lib/
+│   ├── main.dart
+│   ├── app.dart
+│   ├── injection.dart
+│   ├── core/
+│   │   ├── constants/
+│   │   ├── errors/
+│   │   ├── formatting/
+│   │   ├── theme/
+│   │   └── validation/
+│   ├── data/
+│   │   ├── datasources/
+│   │   ├── models/
+│   │   └── repositories/
+│   ├── domain/
+│   │   ├── entities/
+│   │   ├── repositories/
+│   │   └── usecases/
+│   ├── presentation/
+│   │   ├── blocs/
+│   │   ├── l10n/
+│   │   ├── screens/
+│   │   └── widgets/
+│   └── l10n/
+│       ├── app_en.arb
+│       ├── app_ar.arb
+│       └── app_localizations*.dart
+├── test/
+│   ├── automation/
+│   ├── helpers/
+│   └── *_test.dart
+├── android/
+├── ios/
+├── assets/
+├── firestore.rules
+├── pubspec.yaml
+└── README.md
+```
 
-- `lib/data`: Firebase and TheMealDB sources, JSON models, and local meal cache.
-- `lib/domain`: user and meal entities, repository contracts, and auth use cases.
-- `lib/presentation`: auth, menu, cart, favourites, and theme state; screens and shared widgets.
-- `lib/core`: colors, copy, and validators.
-- `lib/injection.dart`: GetIt registrations.
+## Setup and run
 
-The original `assets/images/logo.svg` is the source for
-`assets/images/splash_logo.png`, which `flutter_native_splash.yaml` uses for the
-native Android and iOS splash. Regenerate native resources after changing the PNG
-with `dart run flutter_native_splash:create`.
+1. Install the Flutter SDK compatible with Dart `^3.13.5`, then run `flutter pub get` from this directory.
+2. Enable **Email/Password** in Firebase Authentication and create a Cloud Firestore database. The repository includes `lib/firebase_options.dart` and Android Firebase configuration for the existing project. For a different Firebase project, run `flutterfire configure` and replace its generated configuration.
+3. Deploy the included rules before sign-up or orders testing: `firebase deploy --only firestore:rules --project streetbite-324a0`. Use your own project ID if you changed projects. Rules restrict each user to their own `Users/{uid}` document and legacy orders subcollection.
+4. Configure Google Maps: enable the Maps SDKs for Android and iOS and billing in Google Cloud. Put `MAPS_API_KEY=your-key` in ignored `android/local.properties` and `ios/Flutter/Maps.xcconfig`. Restrict production keys to your app IDs and signing certificates. The iOS map uses SDK 9 for the iOS 15 target.
+5. Run `flutter run` on an Android or iOS device/emulator. The committed Firebase options target these platforms.
 
-The launcher icon is the white logo on the primary green (`#00C874`).
-`assets/icon/app_icon.png` is the full icon, and `assets/icon/app_icon_foreground.png`
-is the Android adaptive icon foreground. After changing either file, regenerate the
-Android and iOS icons with `dart run flutter_launcher_icons`.
+The menu uses TheMealDB development API key `1`. Firebase and maps need their services and network access; widget tests use fakes and run offline.
 
-## Phase 6: profile
+## Permissions and device access
 
-The Profile tab is protected by device biometrics. Tapping it calls
-`local_auth`; the tab only opens after a successful scan, and failure or
-cancellation shows a snackbar while the user stays on the current tab. When the
-device has no biometrics enrolled, a snackbar explains and the profile stays
-closed. A lock icon in the home top bar toggles the requirement on or off; the
-choice is saved in SharedPreferences and remembered across launches, and the
-profile then opens without a scan while the lock is off. On Android, biometrics
-must be enrolled first (Settings > Security >
-Fingerprint); on a connected emulator, simulate a touch with
-`adb emu finger touch 1`.
+| Platform | Declaration | Used for |
+| --- | --- | --- |
+| Android | `INTERNET` | Firebase, meal API, and map requests. |
+| Android | `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION` | Foreground location on the checkout map. |
+| Android | `USE_BIOMETRIC` | Optional profile lock. |
+| iOS | `NSLocationWhenInUseUsageDescription` | Foreground location on the checkout map. |
+| iOS | `NSFaceIDUsageDescription` | Optional Face ID profile lock. |
+| iOS | `NSPhotoLibraryUsageDescription` | Selecting a profile photo. |
 
-The profile screen shows the account photo, name, email, and the device model
-and OS version from `device_info_plus`, detected through
-`defaultTargetPlatform`: Android reports manufacturer and model, iOS the
-machine name, and Windows the computer name and display version; no runtime
-permission is needed on any of them. A gallery photo is picked with
-`image_picker` on Android, iOS and macOS (resized to 512 px, compressed to
-quality 70). On Android, a failed picker launch retries with the system
-document picker; Windows and Linux use `file_selector` directly. The photo is
-shown immediately, then stored as base64 in `Users/{uid}.photoBase64` through the
-`FirestoreService` singleton, which keeps it inside the Firestore document
-limit and under the existing security rules. Android's system photo and document
-pickers grant access to the selected file, so no broad media-storage permission
-is needed.
+Location is requested at runtime; checkout falls back to the last known position and remains usable if location is unavailable. Android's system photo/document pickers grant access to the selected file, so broad media storage permission is unnecessary. `device_info_plus` needs no runtime permission. Device biometrics must be enrolled for the lock to open the profile; an Android emulator can simulate a scan with `adb emu finger touch 1`.
 
-The photo is read back on sign-in, and accounts without a photo keep working.
+## Localization and assets
 
-Below the device card, a segmented control switches between the favorites and
-orders lists, reusing the favourites and order tiles.
+Edit `lib/l10n/app_en.arb` and `app_ar.arb`, then run `flutter gen-l10n`. Generated `AppLocalizations` files are committed. Screens translate language-neutral `AppMessage` values at render time. Arabic supports RTL layout; translations should receive a native-speaker review before release.
+
+`assets/images/logo.svg` is the source for `assets/images/splash_logo.png`; after changing it, run `dart run flutter_native_splash:create`. Launcher icon sources are `assets/icon/app_icon.png` and `assets/icon/app_icon_foreground.png`; regenerate native icons with `dart run flutter_launcher_icons`.
 
 ## Checks
 
-Run `flutter analyze` and `flutter test` from this directory. Firebase requests
-also require an enabled Auth provider, a Firestore database, deployed rules, and
-network access; these are not exercised by the local widget tests. Menu tests use
-an in-memory API response and preferences store, so they also run offline.
-
-## Phase 7 - English & Arabic localization
-
-- **Strings** live in `lib/l10n/app_en.arb` (template) and `app_ar.arb`. Regenerate the typed `AppLocalizations` with `flutter gen-l10n` (output is committed in `lib/l10n/`). The brand name stays the Dart const in `lib/core/constants/brand.dart`.
-- **Cubit messages** are language-neutral `AppMessage` enum values (`lib/core/constants/message.dart`). Screens translate them at render time with `message.text(AppLocalizations.of(context))` (`lib/presentation/l10n/message_localizations.dart`). Validators return `AppMessage?` the same way.
-- **Switching language**: the globe button in the home header (and meal details header) flips English/Arabic; the Profile tab has an EN / العربية control beside Sign out. Login and sign-up have no toggle and follow the saved choice, or the system language if none (English if it is not en/ar).
-- **Persistence**: `LocaleBloc` stores the language code under `streetbite_locale` via `SharedPreferencesAsync`.
-- **RTL**: Arabic mirrors the layout. Direction-dependent code uses `PositionedDirectional`, `EdgeInsetsDirectional` and `AlignmentDirectional`; back chevrons swap with the text direction.
-- The Arabic translations should get a native-speaker review before submission.
+Run `dart format .`, `flutter analyze`, and `flutter test` from this directory. Tests are organized by feature and use `BaseTest` and feature helpers in `test/automation/` for shared widget setup and feature actions.

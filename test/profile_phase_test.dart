@@ -1,12 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
-import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/message.dart';
 
 import 'helpers/l10n.dart';
@@ -38,6 +34,9 @@ import 'package:streetbite/presentation/blocs/profile_lock_cubit.dart';
 import 'package:streetbite/presentation/blocs/profile_state.dart';
 import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/profile_screen.dart';
+
+import 'automation/base_automation.dart';
+import 'automation/profile_automation.dart';
 
 import 'auth_phase_test.dart'
     as earlier
@@ -172,8 +171,7 @@ Future<ProfileState> firstNonUploading(ProfileCubit cubit) =>
 
 void main() {
   setUp(() {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
   });
   test('user model round trips with and without a photo', () {
     const withPhoto = UserModel(
@@ -280,12 +278,9 @@ void main() {
     registerHomeDependencies();
     addTearDown(() async => locator.reset());
 
-    await tester.pumpWidget(const StreetBiteApp());
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).launchSignedInApp();
 
-    await tester.tap(find.text(enL10n.profile).last);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).open(enL10n);
     expect(find.byType(ProfileScreen), findsOneWidget);
     expect(find.text('sara@example.com'), findsOneWidget);
   });
@@ -304,9 +299,7 @@ void main() {
     );
     addTearDown(() async => locator.reset());
 
-    await tester.pumpWidget(const StreetBiteApp());
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).launchSignedInApp();
 
     await tester.tap(find.text(enL10n.profile).last);
     await tester.pump();
@@ -361,12 +354,9 @@ void main() {
     );
     addTearDown(() async => locator.reset());
 
-    await tester.pumpWidget(const StreetBiteApp());
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).launchSignedInApp();
 
-    await tester.tap(find.text(enL10n.profile).last);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).open(enL10n);
     expect(find.byType(ProfileScreen), findsOneWidget);
     expect(biometrics.authenticateCalls, 0);
 
@@ -374,8 +364,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ProfileScreen), findsNothing);
 
-    await tester.tap(find.text(enL10n.profile).last);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).open(enL10n);
     expect(biometrics.authenticateCalls, 1);
     expect(find.byType(ProfileScreen), findsOneWidget);
   });
@@ -395,12 +384,9 @@ void main() {
     );
     addTearDown(() async => locator.reset());
 
-    await tester.pumpWidget(const StreetBiteApp());
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).launchSignedInApp();
 
-    await tester.tap(find.text(enL10n.profile).last);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).open(enL10n);
     expect(find.byType(ProfileScreen), findsOneWidget);
     expect(find.text('sara@example.com'), findsOneWidget);
   });
@@ -418,29 +404,18 @@ void main() {
     registerHomeDependencies(profileLockEnabled: false);
     addTearDown(() async => locator.reset());
 
-    await tester.pumpWidget(const StreetBiteApp());
-    await tester.pump(const Duration(milliseconds: 1400));
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).launchSignedInApp();
 
-    await tester.tap(find.text(enL10n.profile).last);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester).open(enL10n);
     expect(find.text(enL10n.noFavorites), findsOneWidget);
 
-    final ordersSegment = find.descendant(
-      of: find.byType(SegmentedButton<ProfileSection>),
-      matching: find.text(enL10n.orders),
-    );
-    await tester.tap(ordersSegment);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester)
+        .selectSection(ProfileSection.orders, enL10n);
     expect(find.text(enL10n.noOrders), findsOneWidget);
     expect(find.text(enL10n.noFavorites), findsNothing);
 
-    final favoritesSegment = find.descendant(
-      of: find.byType(SegmentedButton<ProfileSection>),
-      matching: find.text(enL10n.favorites),
-    );
-    await tester.tap(favoritesSegment);
-    await tester.pumpAndSettle();
+    await ProfileAutomation(tester)
+        .selectSection(ProfileSection.favorites, enL10n);
     expect(find.text(enL10n.noFavorites), findsOneWidget);
   });
 }

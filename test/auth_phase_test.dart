@@ -58,8 +58,9 @@ import 'package:streetbite/presentation/widgets/hot_offers.dart';
 import 'package:streetbite/presentation/widgets/home_menu_shimmer.dart';
 import 'package:streetbite/presentation/widgets/meal_card.dart';
 import 'package:streetbite/presentation/widgets/meal_image.dart';
-import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
-import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+
+import 'automation/auth_automation.dart';
+import 'automation/base_automation.dart';
 
 class FakeOrderRepository implements OrderRepository {
   @override
@@ -200,8 +201,7 @@ class FakeFavouritesRepository implements FavouritesRepository {
 
 void main() {
   setUp(() {
-    SharedPreferencesAsyncPlatform.instance =
-        InMemorySharedPreferencesAsync.empty();
+    BaseTest.resetPreferences();
   });
   testWidgets('saved cart count appears when a signed-in user returns', (
     tester,
@@ -379,9 +379,7 @@ void main() {
       expect(tester.takeException(), isNull);
     }
 
-    await tester.ensureVisible(find.text(enL10n.createAccount));
-    await tester.tap(find.text(enL10n.createAccount));
-    await tester.pumpAndSettle();
+    await AuthAutomation(tester).openSignUp(enL10n);
     expect(tester.getSize(find.byType(Image)).height, 640 * 0.45);
     expect(tester.takeException(), isNull);
     await cubit.close();
@@ -448,15 +446,13 @@ void main() {
     await tester.pumpWidget(const StreetBiteApp());
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text(enL10n.createAccount));
-    await tester.tap(find.text(enL10n.createAccount));
-    await tester.pumpAndSettle();
+    await AuthAutomation(tester).openSignUp(enL10n);
 
-    final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(0), 'Sara Ali');
-    await tester.enterText(fields.at(1), 'sara@example.com');
-    await tester.enterText(fields.at(2), 'secret1');
-    await tester.enterText(fields.at(3), 'secret1');
+    await AuthAutomation(tester).enterSignUp(
+      name: 'Sara Ali',
+      email: 'sara@example.com',
+      password: 'secret1',
+    );
     await tester.ensureVisible(find.text(enL10n.signUp));
     await tester.tap(find.text(enL10n.signUp));
     await tester.pumpAndSettle();
