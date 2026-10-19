@@ -1,3 +1,4 @@
+import '../../core/constants/message.dart';
 import '../../domain/entities/order.dart';
 
 class OrdersState {
@@ -9,5 +10,5 @@ class OrdersState {
 
   final List<Order> orders;
   final bool isLoading;
-  final String? message;
+  final AppMessage? message;
 }

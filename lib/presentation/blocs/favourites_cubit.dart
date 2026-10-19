@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../domain/entities/favourites_failure.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/repositories/favourites_repository.dart';
@@ -62,8 +62,8 @@ class FavouritesCubit extends Cubit<FavouritesState> {
           meals: state.meals,
           isLoading: false,
           message: wasSaved
-              ? AppStrings.removedFromFavorites
-              : AppStrings.addedToFavorites,
+              ? AppMessage.removedFromFavorites
+              : AppMessage.addedToFavorites,
         ),
       );
     } catch (error) {
@@ -78,12 +78,12 @@ class FavouritesCubit extends Cubit<FavouritesState> {
     }
   }
 
-  String _errorMessage(Object error) {
+  AppMessage _errorMessage(Object error) {
     if (error is FavouritesFailure &&
         error.type == FavouritesFailureType.network) {
-      return AppStrings.networkError;
+      return AppMessage.networkError;
     }
-    return AppStrings.favoritesSaveError;
+    return AppMessage.favoritesSaveError;
   }
 
   @override

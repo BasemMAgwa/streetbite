@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/formatting/price_formatter.dart';
 import '../../domain/entities/cart_item.dart';
 import '../blocs/cart_bloc.dart';
@@ -54,7 +54,7 @@ class CartItemTile extends StatelessWidget {
               children: [
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: AppStrings.decreaseQuantity,
+                  tooltip: AppLocalizations.of(context).decreaseQuantity,
                   onPressed: () => cart.add(DecreaseMealQuantity(item.meal.id)),
                   icon: Icon(
                     Icons.remove,
@@ -65,7 +65,7 @@ class CartItemTile extends StatelessWidget {
                 Text('${item.quantity}'),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: AppStrings.increaseQuantity,
+                  tooltip: AppLocalizations.of(context).increaseQuantity,
                   onPressed: () => cart.add(AddMealToCart(item.meal)),
                   icon: Icon(
                     Icons.add,
@@ -79,7 +79,7 @@ class CartItemTile extends StatelessWidget {
           const SizedBox(width: 4),
           IconButton(
             visualDensity: VisualDensity.compact,
-            tooltip: AppStrings.removeFromCart,
+            tooltip: AppLocalizations.of(context).removeFromCart,
             onPressed: () => cart.add(RemoveMealFromCart(item.meal.id)),
             icon: Icon(
               Icons.delete_outline,

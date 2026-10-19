@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 class AuthTextField extends StatefulWidget {
@@ -32,6 +32,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return TextFormField(
       controller: widget.controller,
       validator: widget.validator,
@@ -49,9 +50,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         hintStyle: const TextStyle(color: Color(0xFF8A9D98)),
         suffixIcon: widget.obscureText
             ? IconButton(
-                tooltip: _hidden
-                    ? AppStrings.showPassword
-                    : AppStrings.hidePassword,
+                tooltip: _hidden ? l10n.showPassword : l10n.hidePassword,
                 onPressed: () => setState(() => _hidden = !_hidden),
                 icon: Icon(
                   _hidden

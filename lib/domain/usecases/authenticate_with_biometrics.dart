@@ -6,5 +6,6 @@ class AuthenticateWithBiometrics {
 
   final BiometricRepository _repository;
 
-  Future<BiometricResult> call() => _repository.authenticate();
+  Future<BiometricResult> call(String localizedReason) =>
+      _repository.authenticate(localizedReason);
 }

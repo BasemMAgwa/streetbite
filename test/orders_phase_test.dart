@@ -3,7 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/constants/message.dart';
+import 'package:streetbite/l10n/app_localizations.dart';
+
+import 'helpers/l10n.dart';
+
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/cart_item.dart';
 import 'package:streetbite/domain/entities/meal.dart';
@@ -40,6 +44,8 @@ void main() {
       BlocProvider.value(
         value: cubit,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light,
           home: const Scaffold(body: OrdersScreen()),
         ),
@@ -49,7 +55,7 @@ void main() {
 
     repository.controller.add([]);
     await tester.pump();
-    expect(find.text(AppStrings.noOrders), findsOneWidget);
+    expect(find.text(enL10n.noOrders), findsOneWidget);
 
     repository.controller.add([
       Order(
@@ -77,8 +83,8 @@ void main() {
     expect(find.text('Tacos'), findsOneWidget);
     expect(find.text('2 items · Today'), findsOneWidget);
     expect(find.text(r'$12.99'), findsOneWidget);
-    expect(find.text(AppStrings.cashOnDeliveryStatus), findsOneWidget);
-    expect(find.text(AppStrings.noOrders), findsNothing);
+    expect(find.text(enL10n.cashOnDeliveryStatus), findsOneWidget);
+    expect(find.text(enL10n.noOrders), findsNothing);
   });
 
   test('order stream errors show a friendly message', () async {
@@ -88,7 +94,7 @@ void main() {
       const OrderFailure(OrderFailureType.network),
     );
     await Future<void>.delayed(Duration.zero);
-    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.message, AppMessage.networkError);
     expect(cubit.state.isLoading, false);
     await cubit.close();
     await repository.controller.close();

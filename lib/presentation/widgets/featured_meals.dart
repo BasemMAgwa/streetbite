@@ -58,9 +58,9 @@ class _FeaturedMealsState extends State<FeaturedMeals> {
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: 16,
-                        right: 16,
+                      PositionedDirectional(
+                        start: 16,
+                        end: 16,
                         bottom: 14,
                         child: Text(
                           featured[index].name,

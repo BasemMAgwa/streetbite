@@ -5,7 +5,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
-import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/constants/message.dart';
+import 'package:streetbite/l10n/app_localizations.dart';
+
+import 'helpers/l10n.dart';
+
 import 'package:streetbite/core/formatting/price_formatter.dart';
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/data/datasources/card_payment_method.dart';
@@ -174,7 +178,7 @@ void main() {
     await cubit.placeOrder([CartItem.fromMeal(soup)]);
 
     expect(cubit.state.orderPlaced, true);
-    expect(cubit.state.message, AppStrings.orderPlacedCardPending);
+    expect(cubit.state.message, AppMessage.orderPlacedCardPending);
     expect(repository.orders.single.paymentStatus, PaymentStatus.pending);
     await cubit.close();
   });
@@ -189,7 +193,7 @@ void main() {
 
     expect(cubit.state.orderPlaced, false);
     expect(cubit.state.isPlacing, false);
-    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.message, AppMessage.networkError);
     await cubit.close();
   });
 
@@ -227,19 +231,24 @@ void main() {
           BlocProvider(create: (_) => ThemeBloc(SharedPreferencesAsync())),
           BlocProvider(create: (_) => checkout(FakeOrderRepository())),
         ],
-        child: MaterialApp(theme: AppTheme.light, home: const CartScreen()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: AppTheme.light,
+          home: const CartScreen(),
+        ),
       ),
     );
     await tester.pump();
-    expect(find.text(AppStrings.total), findsOneWidget);
-    expect(find.text(AppStrings.continueToCheckout), findsOneWidget);
+    expect(find.text(enL10n.total), findsOneWidget);
+    expect(find.text(enL10n.continueToCheckout), findsOneWidget);
 
-    await tester.tap(find.byTooltip(AppStrings.removeFromCart));
+    await tester.tap(find.byTooltip(enL10n.removeFromCart));
     await tester.pump();
     await tester.pump();
 
-    expect(find.text(AppStrings.cartEmptied), findsOneWidget);
-    expect(find.text(AppStrings.emptyCart), findsOneWidget);
+    expect(find.text(enL10n.cartEmptied), findsOneWidget);
+    expect(find.text(enL10n.emptyCart), findsOneWidget);
   });
 
   testWidgets('cart continues to checkout inside the same drawer layout', (
@@ -257,59 +266,61 @@ void main() {
           BlocProvider(create: (_) => checkout(FakeOrderRepository())),
         ],
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: AppTheme.light,
           home: CartScreen(locationSource: UnavailableLocationSource()),
         ),
       ),
     );
     await tester.pump();
-    expect(find.text(AppStrings.clearCart), findsOneWidget);
+    expect(find.text(enL10n.clearCart), findsOneWidget);
     expect(
-      tester.getTopLeft(find.text(AppStrings.clearCart)).dy,
-      tester.getTopLeft(find.text(AppStrings.continueToCheckout)).dy,
+      tester.getTopLeft(find.text(enL10n.clearCart)).dy,
+      tester.getTopLeft(find.text(enL10n.continueToCheckout)).dy,
     );
-    await tester.tap(find.byTooltip(AppStrings.increaseQuantity));
+    await tester.tap(find.byTooltip(enL10n.increaseQuantity));
     await tester.pump();
     expect(cart.state.items.single.quantity, 2);
-    await tester.tap(find.byTooltip(AppStrings.decreaseQuantity));
+    await tester.tap(find.byTooltip(enL10n.decreaseQuantity));
     await tester.pump();
     expect(cart.state.items.single.quantity, 1);
-    await tester.tap(find.text(AppStrings.continueToCheckout));
+    await tester.tap(find.text(enL10n.continueToCheckout));
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.checkout), findsOneWidget);
-    expect(find.text(AppStrings.paymentMethod), findsOneWidget);
+    expect(find.text(enL10n.checkout), findsOneWidget);
+    expect(find.text(enL10n.paymentMethod), findsOneWidget);
     expect(
-      tester.getTopLeft(find.text(AppStrings.cashPayment)).dy,
-      closeTo(tester.getTopLeft(find.text(AppStrings.cardPayment)).dy, 2),
+      tester.getTopLeft(find.text(enL10n.cashPayment)).dy,
+      closeTo(tester.getTopLeft(find.text(enL10n.cardPayment)).dy, 2),
     );
     expect(
-      tester.getTopLeft(find.text(AppStrings.cashPayment)).dx,
-      lessThan(tester.getTopLeft(find.text(AppStrings.cardPayment)).dx),
+      tester.getTopLeft(find.text(enL10n.cashPayment)).dx,
+      lessThan(tester.getTopLeft(find.text(enL10n.cardPayment)).dx),
     );
-    await tester.tap(find.text(AppStrings.cardPayment));
+    await tester.tap(find.text(enL10n.cardPayment));
     await tester.pump();
-    expect(find.text(AppStrings.cardPaymentNote), findsOneWidget);
+    expect(find.text(enL10n.cardPaymentNote), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text(AppStrings.deliveryFee),
+      find.text(enL10n.deliveryFee),
       180,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.orderSummary), findsOneWidget);
-    expect(find.text(AppStrings.deliveryFee), findsOneWidget);
+    expect(find.text(enL10n.orderSummary), findsOneWidget);
+    expect(find.text(enL10n.deliveryFee), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text(AppStrings.taxesFee),
+      find.text(enL10n.taxesFee),
       180,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.taxesFee), findsOneWidget);
+    expect(find.text(enL10n.taxesFee), findsOneWidget);
     expect(
       find.text(
         PriceFormatter.format(OrderPricing.totalCents(cart.state.items)),
       ),
       findsOneWidget,
     );
-    expect(find.text(AppStrings.placeOrder), findsOneWidget);
+    expect(find.text(enL10n.placeOrder), findsOneWidget);
   });
 }

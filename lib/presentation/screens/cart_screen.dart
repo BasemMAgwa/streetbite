@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/formatting/price_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/datasources/device_location_source.dart';
@@ -12,7 +12,9 @@ import '../blocs/cart_event.dart';
 import '../blocs/cart_state.dart';
 import '../blocs/checkout_cubit.dart';
 import '../blocs/checkout_state.dart';
+import '../../core/constants/message.dart';
 import '../widgets/app_snack_bar.dart';
+import '../l10n/message_localizations.dart';
 import '../widgets/cart_checkout_panel.dart';
 import '../widgets/cart_item_tile.dart';
 
@@ -59,14 +61,20 @@ class _CartScreenState extends State<CartScreen> {
             current.items.isEmpty &&
             !current.checkedOut,
         listener: (context, _) {
-          showAppSnackBar(context, AppStrings.cartEmptied);
+          showAppSnackBar(
+            context,
+            AppMessage.cartEmptied.text(AppLocalizations.of(context)),
+          );
           if (_checkout) setState(() => _checkout = false);
         },
       ),
       BlocListener<CheckoutCubit, CheckoutState>(
         listenWhen: (_, current) => current.message != null,
         listener: (context, state) {
-          showAppSnackBar(context, state.message!);
+          showAppSnackBar(
+            context,
+            state.message!.text(AppLocalizations.of(context)),
+          );
           if (state.orderPlaced) {
             context.read<CartBloc>().add(const ClearCart());
             Navigator.of(context).pop();
@@ -79,7 +87,9 @@ class _CartScreenState extends State<CartScreen> {
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         title: Text(
-          _checkout ? AppStrings.checkout : AppStrings.cart,
+          _checkout
+              ? AppLocalizations.of(context).checkout
+              : AppLocalizations.of(context).cart,
           style: const TextStyle(
             fontFamily: AppTheme.sectionFont,
             fontSize: 26,
@@ -87,8 +97,15 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ),
         leading: IconButton(
-          tooltip: _checkout ? AppStrings.back : AppStrings.close,
-          icon: const Icon(Icons.chevron_left, size: 32),
+          tooltip: _checkout
+              ? AppLocalizations.of(context).back
+              : AppLocalizations.of(context).close,
+          icon: Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_right
+                : Icons.chevron_left,
+            size: 32,
+          ),
           onPressed: () => _checkout
               ? setState(() => _checkout = false)
               : Navigator.of(context).pop(),
@@ -128,9 +145,9 @@ class _CartScreenState extends State<CartScreen> {
                     children: [
                       Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              AppStrings.total,
+                              AppLocalizations.of(context).total,
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
@@ -150,8 +167,9 @@ class _CartScreenState extends State<CartScreen> {
                               child: FilledButton(
                                 onPressed: () =>
                                     setState(() => _checkout = true),
-                                child: const Text(
-                                  AppStrings.continueToCheckout,
+                                child: Text(
+                                  AppLocalizations.of(context)
+                                      .continueToCheckout,
                                 ),
                               ),
                             ),
@@ -165,8 +183,8 @@ class _CartScreenState extends State<CartScreen> {
                                 onPressed: () => context.read<CartBloc>().add(
                                   const EmptyCart(),
                                 ),
-                                child: const Text(
-                                  AppStrings.clearCart,
+                                child: Text(
+                                  AppLocalizations.of(context).clearCart,
                                   maxLines: 1,
                                 ),
                               ),
@@ -200,7 +218,7 @@ class _EmptyCart extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
         ),
         const SizedBox(height: 12),
-        const Text(AppStrings.emptyCart),
+        Text(AppLocalizations.of(context).emptyCart),
       ],
     ),
   );

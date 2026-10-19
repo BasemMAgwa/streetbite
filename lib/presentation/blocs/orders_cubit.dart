@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/order_failure.dart';
 import '../../domain/repositories/order_repository.dart';
@@ -26,10 +26,10 @@ class OrdersCubit extends Cubit<OrdersState> {
           },
           onError: (Object error) {
             if (isClosed) return;
-            final message =
+            final AppMessage message =
                 error is OrderFailure && error.type == OrderFailureType.network
-                ? AppStrings.networkError
-                : AppStrings.ordersLoadError;
+                ? AppMessage.networkError
+                : AppMessage.ordersLoadError;
             emit(
               OrdersState(
                 orders: state.orders,

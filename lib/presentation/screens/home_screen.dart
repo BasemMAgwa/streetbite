@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
+import '../../l10n/app_localizations.dart';
+import '../l10n/message_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/repositories/favourites_repository.dart';
 import '../../injection.dart';
@@ -44,7 +46,10 @@ class HomeScreen extends StatelessWidget {
     ],
     child: BlocListener<FavouritesCubit, FavouritesState>(
       listenWhen: (_, current) => current.message != null,
-      listener: (context, state) => showAppSnackBar(context, state.message!),
+      listener: (context, state) => showAppSnackBar(
+        context,
+        state.message!.text(AppLocalizations.of(context)),
+      ),
       child: const _HomeView(),
     ),
   );
@@ -68,100 +73,117 @@ class _HomeViewState extends State<_HomeView> {
       return;
     }
     setState(() => _unlockingProfile = true);
-    final result = await locator<AuthenticateWithBiometrics>()();
+    final reason = AppLocalizations.of(context).biometricReason;
+    final result = await locator<AuthenticateWithBiometrics>()(reason);
     if (!mounted) return;
     setState(() => _unlockingProfile = false);
+    final l10n = AppLocalizations.of(context);
     switch (result) {
       case BiometricResult.success:
         setState(() => _tab = 3);
       case BiometricResult.cancelled:
-        showAppSnackBar(context, AppStrings.biometricCancelled);
+        showAppSnackBar(context, AppMessage.biometricCancelled.text(l10n));
       case BiometricResult.unavailable:
-        showAppSnackBar(context, AppStrings.biometricUnavailable);
+        showAppSnackBar(context, AppMessage.biometricUnavailable.text(l10n));
       case BiometricResult.failed:
-        showAppSnackBar(context, AppStrings.biometricFailed);
+        showAppSnackBar(context, AppMessage.biometricFailed.text(l10n));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 8,
-        title: const ThemeToggleButton(),
-        actions: const [BiometricLockButton(), AppHeaderActions()],
-      ),
-      body: switch (_tab) {
-        0 => const _HomeFeed(),
-        1 => const VendorMapScreen(),
-        2 => BlocProvider(
-          create: (_) => locator<OrdersCubit>(
-            param1: context.read<AuthCubit>().state.user!.id,
-          )..load(),
-          child: const OrdersScreen(),
-        ),
-        _ => BlocProvider(
-          create: (_) => locator<ProfileCubit>(
-            param1: context.read<AuthCubit>().state.user!.id,
-            param2: context.read<AuthCubit>().updatePhoto,
-          )..load(),
-          child: const ProfileScreen(),
-        ),
+    final l10n = AppLocalizations.of(context);
+    return BlocListener<ProfileLockCubit, bool>(
+      listener: (context, enabled) {
+        if (enabled && _tab == 3) setState(() => _tab = 0);
       },
-      bottomNavigationBar: ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: BottomNavigationBar(
-            currentIndex: _tab,
-            onTap: (index) {
-              if (index == 3 && _tab != 3) {
-                _openProfile();
-              } else {
-                setState(() => _tab = index);
-              }
-            },
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: AppTheme.green,
-            unselectedItemColor: AppTheme.muted,
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            items: const [
-              BottomNavigationBarItem(
-                icon: _TabIcon('assets/images/home_icon.svg', AppTheme.muted),
-                activeIcon: _TabIcon(
-                  'assets/images/home_icon.svg',
-                  AppTheme.green,
+      child: Scaffold(
+        appBar: AppBar(
+          titleSpacing: 8,
+          title: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [ThemeToggleButton(), LanguageToggleButton()],
+          ),
+          actions: const [BiometricLockButton(), AppHeaderActions()],
+        ),
+        body: switch (_tab) {
+          0 => const _HomeFeed(),
+          1 => const VendorMapScreen(),
+          2 => BlocProvider(
+            create: (_) => locator<OrdersCubit>(
+              param1: context.read<AuthCubit>().state.user!.id,
+            )..load(),
+            child: const OrdersScreen(),
+          ),
+          _ => BlocProvider(
+            create: (_) => locator<ProfileCubit>(
+              param1: context.read<AuthCubit>().state.user!.id,
+              param2: context.read<AuthCubit>().updatePhoto,
+            )..load(),
+            child: const ProfileScreen(),
+          ),
+        },
+        bottomNavigationBar: ColoredBox(
+          color: Theme.of(context).colorScheme.surface,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: BottomNavigationBar(
+              currentIndex: _tab,
+              onTap: (index) {
+                if (index == 3 && _tab != 3) {
+                  _openProfile();
+                } else {
+                  setState(() => _tab = index);
+                }
+              },
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: AppTheme.green,
+              unselectedItemColor: AppTheme.muted,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              items: [
+                BottomNavigationBarItem(
+                  icon: _TabIcon('assets/images/home_icon.svg', AppTheme.muted),
+                  activeIcon: _TabIcon(
+                    'assets/images/home_icon.svg',
+                    AppTheme.green,
+                  ),
+                  label: l10n.home,
                 ),
-                label: AppStrings.home,
-              ),
-              BottomNavigationBarItem(
-                icon: _TabIcon('assets/images/browse_icon.svg', AppTheme.muted),
-                activeIcon: _TabIcon(
-                  'assets/images/browse_icon.svg',
-                  AppTheme.green,
+                BottomNavigationBarItem(
+                  icon: _TabIcon(
+                    'assets/images/browse_icon.svg',
+                    AppTheme.muted,
+                  ),
+                  activeIcon: _TabIcon(
+                    'assets/images/browse_icon.svg',
+                    AppTheme.green,
+                  ),
+                  label: l10n.vendors,
                 ),
-                label: AppStrings.vendors,
-              ),
-              BottomNavigationBarItem(
-                icon: _TabIcon('assets/images/orders_icon.svg', AppTheme.muted),
-                activeIcon: _TabIcon(
-                  'assets/images/orders_icon.svg',
-                  AppTheme.green,
+                BottomNavigationBarItem(
+                  icon: _TabIcon(
+                    'assets/images/orders_icon.svg',
+                    AppTheme.muted,
+                  ),
+                  activeIcon: _TabIcon(
+                    'assets/images/orders_icon.svg',
+                    AppTheme.green,
+                  ),
+                  label: l10n.orders,
                 ),
-                label: AppStrings.orders,
-              ),
-              BottomNavigationBarItem(
-                icon: _TabIcon(
-                  'assets/images/profile_icon.svg',
-                  AppTheme.muted,
+                BottomNavigationBarItem(
+                  icon: _TabIcon(
+                    'assets/images/profile_icon.svg',
+                    AppTheme.muted,
+                  ),
+                  activeIcon: _TabIcon(
+                    'assets/images/profile_icon.svg',
+                    AppTheme.green,
+                  ),
+                  label: l10n.profile,
                 ),
-                activeIcon: _TabIcon(
-                  'assets/images/profile_icon.svg',
-                  AppTheme.green,
-                ),
-                label: AppStrings.profile,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -174,6 +196,7 @@ class _HomeFeed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final horizontalPadding = MediaQuery.sizeOf(context).width < 360
         ? 16.0
         : 20.0;
@@ -188,13 +211,13 @@ class _HomeFeed extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  state.message ?? AppStrings.menuUnavailable,
+                  state.message?.text(l10n) ?? l10n.menuUnavailable,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: context.read<MenuCubit>().loadMeals,
-                  child: const Text(AppStrings.tryAgain),
+                  child: Text(l10n.tryAgain),
                 ),
               ],
             ),
@@ -211,20 +234,20 @@ class _HomeFeed extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Text(
-                    AppStrings.showingSavedMeals,
+                    l10n.showingSavedMeals,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
               ],
-              _SectionTitle(AppStrings.recommended, horizontalPadding),
+              _SectionTitle(l10n.recommended, horizontalPadding),
               FeaturedMeals(meals),
               const SizedBox(height: 20),
-              _SectionTitle(AppStrings.hotOffers, horizontalPadding),
+              _SectionTitle(l10n.hotOffers, horizontalPadding),
               HotOffers(meals, horizontalPadding: horizontalPadding),
               const SizedBox(height: 20),
-              _SectionTitle(AppStrings.liveMenu, horizontalPadding),
+              _SectionTitle(l10n.liveMenu, horizontalPadding),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 child: MenuGrid(meals.take(6).toList()),

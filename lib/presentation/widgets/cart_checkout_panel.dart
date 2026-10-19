@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/formatting/price_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/datasources/device_location_source.dart';
@@ -35,16 +35,16 @@ class CartCheckoutPanel extends StatelessWidget {
               children: [
                 CheckoutLocationMap(locationSource: locationSource),
                 const SizedBox(height: 12),
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.location_on_outlined, size: 19),
                     SizedBox(width: 6),
-                    Text(AppStrings.currentLocation),
+                    Text(AppLocalizations.of(context).currentLocation),
                   ],
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  AppStrings.paymentMethod,
+                  AppLocalizations.of(context).paymentMethod,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -70,7 +70,7 @@ class CartCheckoutPanel extends StatelessWidget {
                 if (state.payment == PaymentType.card) ...[
                   const SizedBox(height: 8),
                   Text(
-                    AppStrings.cardPaymentNote,
+                    AppLocalizations.of(context).cardPaymentNote,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -78,29 +78,29 @@ class CartCheckoutPanel extends StatelessWidget {
                 ],
                 const SizedBox(height: 24),
                 Text(
-                  AppStrings.orderSummary,
+                  AppLocalizations.of(context).orderSummary,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 12),
                 _SummaryRow(
-                  AppStrings.orderAmount,
+                  AppLocalizations.of(context).orderAmount,
                   PriceFormatter.format(cart.totalCents),
                 ),
                 const SizedBox(height: 12),
                 _SummaryRow(
-                  AppStrings.deliveryFee,
+                  AppLocalizations.of(context).deliveryFee,
                   PriceFormatter.format(OrderPricing.deliveryFeeCents),
                 ),
                 const SizedBox(height: 12),
                 _SummaryRow(
-                  AppStrings.taxesFee,
+                  AppLocalizations.of(context).taxesFee,
                   PriceFormatter.format(OrderPricing.taxesFeeCents),
                 ),
                 const Divider(height: 24),
                 _SummaryRow(
-                  AppStrings.total,
+                  AppLocalizations.of(context).total,
                   PriceFormatter.format(cart.checkoutTotalCents),
                   bold: true,
                 ),
@@ -131,8 +131,8 @@ class CartCheckoutPanel extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text(
-                          AppStrings.placeOrder,
+                      : Text(
+                          AppLocalizations.of(context).placeOrder,
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                 ),
@@ -160,7 +160,9 @@ class _PaymentOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final isCash = type == PaymentType.cash;
-    final title = isCash ? AppStrings.cashPayment : AppStrings.cardPayment;
+    final title = isCash
+        ? AppLocalizations.of(context).cashPayment
+        : AppLocalizations.of(context).cardPayment;
     return Semantics(
       button: true,
       selected: selected,
@@ -219,8 +221,8 @@ class _PaymentOption extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       isCash
-                          ? AppStrings.cashPaymentSubtitle
-                          : AppStrings.cardPaymentSubtitle,
+                          ? AppLocalizations.of(context).cashPaymentSubtitle
+                          : AppLocalizations.of(context).cardPaymentSubtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall

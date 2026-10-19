@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/entities/auth_failure.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -46,7 +46,7 @@ class AuthCubit extends Cubit<AuthState> {
         AuthState(
           status: AuthStatus.authenticated,
           user: user,
-          message: AppStrings.loginSuccess,
+          message: AppMessage.loginSuccess,
         ),
       );
     } on AuthFailure catch (failure) {
@@ -68,7 +68,7 @@ class AuthCubit extends Cubit<AuthState> {
         AuthState(
           status: AuthStatus.authenticated,
           user: user,
-          message: AppStrings.signUpSuccess,
+          message: AppMessage.signUpSuccess,
         ),
       );
     } on AuthFailure catch (failure) {
@@ -90,7 +90,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(
         const AuthState(
           status: AuthStatus.unauthenticated,
-          message: AppStrings.signOutSuccess,
+          message: AppMessage.signOutSuccess,
         ),
       );
     } on AuthFailure catch (failure) {
@@ -121,15 +121,15 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  String _messageFor(AuthFailureType type) => switch (type) {
-    AuthFailureType.invalidEmail => AppStrings.invalidEmail,
-    AuthFailureType.emailInUse => AppStrings.emailInUse,
-    AuthFailureType.weakPassword => AppStrings.weakPassword,
-    AuthFailureType.invalidCredentials => AppStrings.invalidCredentials,
-    AuthFailureType.tooManyRequests => AppStrings.blocked,
-    AuthFailureType.network => AppStrings.networkError,
-    AuthFailureType.serviceUnavailable => AppStrings.serviceUnavailable,
-    AuthFailureType.accountSave => AppStrings.accountSaveError,
-    AuthFailureType.generic => AppStrings.genericError,
+  AppMessage _messageFor(AuthFailureType type) => switch (type) {
+    AuthFailureType.invalidEmail => AppMessage.invalidEmail,
+    AuthFailureType.emailInUse => AppMessage.emailInUse,
+    AuthFailureType.weakPassword => AppMessage.weakPassword,
+    AuthFailureType.invalidCredentials => AppMessage.invalidCredentials,
+    AuthFailureType.tooManyRequests => AppMessage.blocked,
+    AuthFailureType.network => AppMessage.networkError,
+    AuthFailureType.serviceUnavailable => AppMessage.serviceUnavailable,
+    AuthFailureType.accountSave => AppMessage.accountSaveError,
+    AuthFailureType.generic => AppMessage.genericError,
   };
 }

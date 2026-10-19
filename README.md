@@ -114,3 +114,12 @@ Run `flutter analyze` and `flutter test` from this directory. Firebase requests
 also require an enabled Auth provider, a Firestore database, deployed rules, and
 network access; these are not exercised by the local widget tests. Menu tests use
 an in-memory API response and preferences store, so they also run offline.
+
+## Phase 7 - English & Arabic localization
+
+- **Strings** live in `lib/l10n/app_en.arb` (template) and `app_ar.arb`. Regenerate the typed `AppLocalizations` with `flutter gen-l10n` (output is committed in `lib/l10n/`). The brand name stays the Dart const in `lib/core/constants/brand.dart`.
+- **Cubit messages** are language-neutral `AppMessage` enum values (`lib/core/constants/message.dart`). Screens translate them at render time with `message.text(AppLocalizations.of(context))` (`lib/presentation/l10n/message_localizations.dart`). Validators return `AppMessage?` the same way.
+- **Switching language**: the globe button in the home header (and meal details header) flips English/Arabic; the Profile tab has an EN / العربية control beside Sign out. Login and sign-up have no toggle and follow the saved choice, or the system language if none (English if it is not en/ar).
+- **Persistence**: `LocaleBloc` stores the language code under `streetbite_locale` via `SharedPreferencesAsync`.
+- **RTL**: Arabic mirrors the layout. Direction-dependent code uses `PositionedDirectional`, `EdgeInsetsDirectional` and `AlignmentDirectional`; back chevrons swap with the text direction.
+- The Arabic translations should get a native-speaker review before submission.

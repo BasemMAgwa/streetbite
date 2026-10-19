@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../blocs/favourites_cubit.dart';
 import '../blocs/favourites_state.dart';
@@ -32,8 +32,8 @@ class FavouritesScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       titleSpacing: 0,
-      title: const Text(
-        AppStrings.favorites,
+      title: Text(
+        AppLocalizations.of(context).favorites,
         style: TextStyle(
           fontFamily: AppTheme.sectionFont,
           fontSize: 26,
@@ -42,8 +42,13 @@ class FavouritesScreen extends StatelessWidget {
       ),
       automaticallyImplyLeading: false,
       leading: IconButton(
-        tooltip: AppStrings.close,
-        icon: const Icon(Icons.chevron_left, size: 32),
+        tooltip: AppLocalizations.of(context).close,
+        icon: Icon(
+          Directionality.of(context) == TextDirection.rtl
+              ? Icons.chevron_right
+              : Icons.chevron_left,
+          size: 32,
+        ),
         onPressed: () => Navigator.of(context).pop(),
       ),
     ),
@@ -53,7 +58,7 @@ class FavouritesScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (state.meals.isEmpty) {
-          return const Center(child: Text(AppStrings.noFavorites));
+          return Center(child: Text(AppLocalizations.of(context).noFavorites));
         }
         return ListView.separated(
           padding: const EdgeInsets.all(16),

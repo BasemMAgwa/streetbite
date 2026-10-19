@@ -1,3 +1,4 @@
+import '../../core/constants/message.dart';
 import '../../domain/entities/meal.dart';
 
 enum MenuStatus { loading, ready, error }
@@ -15,5 +16,5 @@ class MenuState {
   final List<Meal> meals;
   final bool isRefreshing;
   final bool isCached;
-  final String? message;
+  final AppMessage? message;
 }

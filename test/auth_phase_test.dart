@@ -7,7 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:streetbite/app.dart';
-import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/constants/message.dart';
+import 'package:streetbite/l10n/app_localizations.dart';
+
+import 'helpers/l10n.dart';
+
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
 import 'package:streetbite/domain/entities/biometric_result.dart';
@@ -69,7 +73,7 @@ class FakeBiometricRepository implements BiometricRepository {
   BiometricResult result = BiometricResult.success;
 
   @override
-  Future<BiometricResult> authenticate() async => result;
+  Future<BiometricResult> authenticate(String localizedReason) async => result;
 }
 
 class FakeProfileRepository implements ProfileRepository {
@@ -228,7 +232,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
     final badge = find.ancestor(
-      of: find.byTooltip(AppStrings.cart),
+      of: find.byTooltip(enL10n.cart),
       matching: find.byType(Badge),
     );
     expect(tester.widget<Badge>(badge).isLabelVisible, true);
@@ -253,7 +257,7 @@ void main() {
       ),
     );
 
-    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.message, AppMessage.networkError);
     expect(cubit.state.isSaving, false);
     expect(repository.saved, isEmpty);
     await cubit.close();
@@ -268,7 +272,7 @@ void main() {
       await cubit.logIn('sara@example.com', 'password');
 
       expect(cubit.state.status, AuthStatus.unauthenticated);
-      expect(cubit.state.message, AppStrings.invalidCredentials);
+      expect(cubit.state.message, AppMessage.invalidCredentials);
       expect(cubit.state.isBusy, false);
       await cubit.close();
     },
@@ -297,12 +301,16 @@ void main() {
     await tester.pumpWidget(
       BlocProvider.value(
         value: cubit,
-        child: const MaterialApp(home: LoginScreen()),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: LoginScreen(),
+        ),
       ),
     );
 
-    await tester.ensureVisible(find.text(AppStrings.createAccount));
-    await tester.tap(find.text(AppStrings.createAccount));
+    await tester.ensureVisible(find.text(enL10n.createAccount));
+    await tester.tap(find.text(enL10n.createAccount));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 175));
     final signUpRoute = ModalRoute.of(
@@ -312,30 +320,30 @@ void main() {
     expect(signUpRoute!.animation!.value, greaterThan(0));
     expect(signUpRoute.animation!.value, lessThan(1));
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.signUpTitle), findsOneWidget);
+    expect(find.text(enL10n.signUpTitle), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).first, 'Basem');
     await tester.pump();
-    expect(find.text(AppStrings.requiredEmail), findsNothing);
-    expect(find.text(AppStrings.requiredPassword), findsNothing);
-    expect(find.text(AppStrings.requiredConfirmation), findsNothing);
+    expect(find.text(enL10n.requiredEmail), findsNothing);
+    expect(find.text(enL10n.requiredPassword), findsNothing);
+    expect(find.text(enL10n.requiredConfirmation), findsNothing);
 
     await tester.enterText(find.byType(TextFormField).at(1), 'invalid');
     await tester.pump();
-    expect(find.text(AppStrings.invalidEmail), findsOneWidget);
-    expect(find.text(AppStrings.requiredPassword), findsNothing);
+    expect(find.text(enL10n.invalidEmail), findsOneWidget);
+    expect(find.text(enL10n.requiredPassword), findsNothing);
     await tester.enterText(find.byType(TextFormField).at(1), '');
 
-    await tester.ensureVisible(find.text(AppStrings.signUp));
-    await tester.tap(find.text(AppStrings.signUp));
+    await tester.ensureVisible(find.text(enL10n.signUp));
+    await tester.tap(find.text(enL10n.signUp));
     await tester.pump();
-    expect(find.text(AppStrings.requiredName), findsNothing);
-    expect(find.text(AppStrings.requiredEmail), findsOneWidget);
-    expect(find.text(AppStrings.requiredPassword), findsOneWidget);
-    expect(find.text(AppStrings.requiredConfirmation), findsOneWidget);
+    expect(find.text(enL10n.requiredName), findsNothing);
+    expect(find.text(enL10n.requiredEmail), findsOneWidget);
+    expect(find.text(enL10n.requiredPassword), findsOneWidget);
+    expect(find.text(enL10n.requiredConfirmation), findsOneWidget);
 
-    await tester.ensureVisible(find.text(AppStrings.logIn));
-    await tester.tap(find.text(AppStrings.logIn));
+    await tester.ensureVisible(find.text(enL10n.logIn));
+    await tester.tap(find.text(enL10n.logIn));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 175));
     expect(signUpRoute.animation!.value, greaterThan(0));
@@ -359,7 +367,11 @@ void main() {
       await tester.pumpWidget(
         BlocProvider.value(
           value: cubit,
-          child: const MaterialApp(home: LoginScreen()),
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: LoginScreen(),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -367,8 +379,8 @@ void main() {
       expect(tester.takeException(), isNull);
     }
 
-    await tester.ensureVisible(find.text(AppStrings.createAccount));
-    await tester.tap(find.text(AppStrings.createAccount));
+    await tester.ensureVisible(find.text(enL10n.createAccount));
+    await tester.tap(find.text(enL10n.createAccount));
     await tester.pumpAndSettle();
     expect(tester.getSize(find.byType(Image)).height, 640 * 0.45);
     expect(tester.takeException(), isNull);
@@ -436,8 +448,8 @@ void main() {
     await tester.pumpWidget(const StreetBiteApp());
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text(AppStrings.createAccount));
-    await tester.tap(find.text(AppStrings.createAccount));
+    await tester.ensureVisible(find.text(enL10n.createAccount));
+    await tester.tap(find.text(enL10n.createAccount));
     await tester.pumpAndSettle();
 
     final fields = find.byType(TextFormField);
@@ -445,13 +457,13 @@ void main() {
     await tester.enterText(fields.at(1), 'sara@example.com');
     await tester.enterText(fields.at(2), 'secret1');
     await tester.enterText(fields.at(3), 'secret1');
-    await tester.ensureVisible(find.text(AppStrings.signUp));
-    await tester.tap(find.text(AppStrings.signUp));
+    await tester.ensureVisible(find.text(enL10n.signUp));
+    await tester.tap(find.text(enL10n.signUp));
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Sara Ali'), findsNothing);
-    await tester.tap(find.text(AppStrings.profile));
+    await tester.tap(find.text(enL10n.profile));
     await tester.pumpAndSettle();
     expect(find.text('Sara Ali'), findsOneWidget);
   });
@@ -506,15 +518,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    expect(find.text(AppStrings.recommended), findsOneWidget);
-    expect(find.text(AppStrings.hotOffers), findsOneWidget);
+    expect(find.text(enL10n.recommended), findsOneWidget);
+    expect(find.text(enL10n.hotOffers), findsOneWidget);
     expect(find.byType(PageView), findsOneWidget);
-    expect(find.byTooltip(AppStrings.favorites), findsOneWidget);
-    expect(find.byTooltip(AppStrings.cart), findsOneWidget);
+    expect(find.byTooltip(enL10n.favorites), findsOneWidget);
+    expect(find.byTooltip(enL10n.cart), findsOneWidget);
     expect(find.text('Sara Ali'), findsNothing);
-    expect(find.text(AppStrings.hotFlag), findsWidgets);
+    expect(find.text(enL10n.hotFlag), findsWidgets);
     expect(
-      tester.widget<Text>(find.text(AppStrings.recommended)).style?.fontFamily,
+      tester.widget<Text>(find.text(enL10n.recommended)).style?.fontFamily,
       AppTheme.sectionFont,
     );
     expect(
@@ -531,7 +543,7 @@ void main() {
     tester.view.physicalSize = const Size(327, 707);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip(AppStrings.darkMode));
+    await tester.tap(find.byTooltip(enL10n.darkMode));
     await tester.pumpAndSettle();
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
@@ -539,7 +551,7 @@ void main() {
     );
     final darkTheme = Theme.of(tester.element(find.byType(HomeScreen)));
     expect(
-      tester.widget<Text>(find.text(AppStrings.recommended)).style?.color,
+      tester.widget<Text>(find.text(enL10n.recommended)).style?.color,
       darkTheme.colorScheme.onSurface,
     );
     final offersList = find.descendant(
@@ -556,22 +568,22 @@ void main() {
       matching: find.byType(Card),
     );
     expect(tester.widget<Card>(mealCard).color, AppTheme.darkCard);
-    await tester.tap(find.text(AppStrings.addToCart).first);
+    await tester.tap(find.text(enL10n.addToCart).first);
     await tester.pump();
-    expect(find.text(AppStrings.mealAdded), findsOneWidget);
+    expect(find.text(enL10n.mealAdded), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
 
-    await tester.tap(find.byTooltip(AppStrings.cart));
+    await tester.tap(find.byTooltip(enL10n.cart));
     await tester.pumpAndSettle();
     expect(find.text('Meal 0'), findsWidgets);
     expect(find.byType(BottomSheet), findsOneWidget);
-    await tester.tap(find.byTooltip(AppStrings.close));
+    await tester.tap(find.byTooltip(enL10n.close));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.vendors).last);
+    await tester.tap(find.text(enL10n.vendors).last);
     await tester.pumpAndSettle();
     expect(find.byType(VendorMapScreen), findsOneWidget);
-    expect(find.text(AppStrings.nearbyVendors), findsOneWidget);
+    expect(find.text(enL10n.nearbyVendors), findsOneWidget);
     final vendorMarkers = tester
         .widget<GoogleMap>(find.byType(GoogleMap))
         .markers;
@@ -589,10 +601,10 @@ void main() {
         contains(vendor.rating.toStringAsFixed(1)),
       );
     }
-    await tester.tap(find.text(AppStrings.orders).last);
+    await tester.tap(find.text(enL10n.orders).last);
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.noOrders), findsOneWidget);
-    await tester.tap(find.text(AppStrings.profile).last);
+    expect(find.text(enL10n.noOrders), findsOneWidget);
+    await tester.tap(find.text(enL10n.profile).last);
     await tester.pumpAndSettle();
     expect(find.text('sara@example.com'), findsOneWidget);
   });
@@ -623,10 +635,10 @@ void main() {
     meals.result.complete(await FakeMealRepository().refreshMeals());
     await tester.pumpAndSettle();
     expect(find.byType(HomeMenuShimmer), findsNothing);
-    expect(find.text(AppStrings.recommended), findsOneWidget);
+    expect(find.text(enL10n.recommended), findsOneWidget);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -250));
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.liveMenu), findsOneWidget);
+    expect(find.text(enL10n.liveMenu), findsOneWidget);
   });
 
   testWidgets('meal details save a favourite and keep the top actions', (
@@ -661,12 +673,12 @@ void main() {
     expect(find.byType(MealDetailsScreen), findsOneWidget);
     final route = ModalRoute.of(tester.element(find.byType(MealDetailsScreen)));
     expect((route?.settings.arguments as Meal).id, '0');
-    expect(find.byTooltip(AppStrings.darkMode), findsOneWidget);
-    expect(find.byTooltip(AppStrings.favorites), findsOneWidget);
-    expect(find.byTooltip(AppStrings.cart), findsOneWidget);
-    expect(find.text(AppStrings.category), findsOneWidget);
-    expect(find.text(AppStrings.origin), findsOneWidget);
-    expect(find.text(AppStrings.instructions), findsOneWidget);
+    expect(find.byTooltip(enL10n.darkMode), findsOneWidget);
+    expect(find.byTooltip(enL10n.favorites), findsOneWidget);
+    expect(find.byTooltip(enL10n.cart), findsOneWidget);
+    expect(find.text(enL10n.category), findsOneWidget);
+    expect(find.text(enL10n.origin), findsOneWidget);
+    expect(find.text(enL10n.instructions), findsOneWidget);
     final detailsScaffold = tester.widget<Scaffold>(
       find.descendant(
         of: find.byType(MealDetailsScreen),
@@ -697,16 +709,16 @@ void main() {
       false,
     );
 
-    await tester.tap(find.text(AppStrings.addToFavorites));
+    await tester.tap(find.text(enL10n.addToFavorites));
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(favourites.saved, isEmpty);
     favourites.pendingAdd!.complete();
     await tester.pumpAndSettle();
     expect(favourites.saved.single.id, '0');
-    expect(find.text(AppStrings.removeFromFavorites), findsOneWidget);
+    expect(find.text(enL10n.removeFromFavorites), findsOneWidget);
     final favoritesBadge = find.ancestor(
-      of: find.byTooltip(AppStrings.favorites),
+      of: find.byTooltip(enL10n.favorites),
       matching: find.byType(Badge),
     );
     expect(tester.widget<Badge>(favoritesBadge).isLabelVisible, true);
@@ -741,12 +753,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AppBar>(topBar).foregroundColor, Colors.white);
 
-    await tester.tap(find.text(AppStrings.addToCart));
+    await tester.tap(find.text(enL10n.addToCart));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text(AppStrings.mealAdded), findsOneWidget);
+    expect(find.text(enL10n.mealAdded), findsOneWidget);
     final cartBadge = find.ancestor(
-      of: find.byTooltip(AppStrings.cart),
+      of: find.byTooltip(enL10n.cart),
       matching: find.byType(Badge),
     );
     expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
@@ -754,32 +766,32 @@ void main() {
       tester.widget<Badge>(cartBadge).backgroundColor,
       AppTheme.badgeGreen,
     );
-    expect(find.text(AppStrings.removeFromCart), findsOneWidget);
+    expect(find.text(enL10n.removeFromCart), findsOneWidget);
 
-    await tester.tap(find.text(AppStrings.removeFromCart));
+    await tester.tap(find.text(enL10n.removeFromCart));
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.addToCart), findsOneWidget);
+    expect(find.text(enL10n.addToCart), findsOneWidget);
     expect(tester.widget<Badge>(cartBadge).isLabelVisible, false);
 
-    await tester.tap(find.byTooltip(AppStrings.favorites));
+    await tester.tap(find.byTooltip(enL10n.favorites));
     await tester.pumpAndSettle();
     expect(find.text('Meal 0'), findsWidgets);
     expect(tester.takeException(), isNull);
 
     expect(find.byType(BottomSheet), findsOneWidget);
-    await tester.tap(find.byTooltip(AppStrings.addToCart));
+    await tester.tap(find.byTooltip(enL10n.addToCart));
     await tester.pump();
     expect(tester.widget<Badge>(cartBadge).isLabelVisible, true);
-    await tester.tap(find.byTooltip(AppStrings.removeFromFavorites));
+    await tester.tap(find.byTooltip(enL10n.removeFromFavorites));
     await tester.pumpAndSettle();
     expect(favourites.saved, isEmpty);
-    expect(find.text(AppStrings.noFavorites), findsOneWidget);
-    await tester.tap(find.byTooltip(AppStrings.close));
+    expect(find.text(enL10n.noFavorites), findsOneWidget);
+    await tester.tap(find.byTooltip(enL10n.close));
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.addToFavorites), findsOneWidget);
+    expect(find.text(enL10n.addToFavorites), findsOneWidget);
     expect(tester.widget<Badge>(favoritesBadge).isLabelVisible, false);
 
-    await tester.tap(find.byTooltip(AppStrings.back));
+    await tester.tap(find.byTooltip(enL10n.back));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
     await tester.pumpAndSettle();

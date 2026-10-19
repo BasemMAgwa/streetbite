@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/constants/brand.dart';
+import 'l10n/app_localizations.dart';
+import 'presentation/l10n/message_localizations.dart';
+import 'presentation/blocs/locale_bloc.dart';
+import 'presentation/blocs/locale_event.dart';
+
 import 'core/theme/app_theme.dart';
 import 'data/datasources/cart_local_data_source.dart';
 import 'data/datasources/device_location_source.dart';
@@ -29,6 +35,10 @@ class StreetBiteApp extends StatelessWidget {
         BlocProvider(
           create: (_) =>
               ThemeBloc(SharedPreferencesAsync())..add(const LoadTheme()),
+        ),
+        BlocProvider(
+          create: (_) =>
+              LocaleBloc(SharedPreferencesAsync())..add(const LoadLocale()),
         ),
         BlocProvider(
           create: (_) =>
@@ -78,10 +88,23 @@ class _AppViewState extends State<_AppView> {
         listener: (context, state) {
           _messengerKey.currentState
             ?..hideCurrentSnackBar()
-            ..showSnackBar(SnackBar(content: Text(state.message!)));
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.message!.text(
+                    AppLocalizations.of(
+                      _messengerKey.currentContext ?? context,
+                    ),
+                  ),
+                ),
+              ),
+            );
         },
         builder: (context, state) => MaterialApp(
-          title: 'StreetBite',
+          title: appName,
+          locale: context.watch<LocaleBloc>().state,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           debugShowCheckedModeBanner: false,
           scaffoldMessengerKey: _messengerKey,
           theme: AppTheme.light,

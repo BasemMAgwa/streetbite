@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../data/datasources/device_location_source.dart';
 
 class CheckoutLocationMap extends StatefulWidget {
@@ -38,7 +38,7 @@ class _CheckoutLocationMapState extends State<CheckoutLocationMap> {
     future: _position,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return const SizedBox(
+        return SizedBox(
           height: 170,
           child: Center(
             child: Column(
@@ -46,7 +46,7 @@ class _CheckoutLocationMapState extends State<CheckoutLocationMap> {
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 8),
-                Text(AppStrings.findingLocation),
+                Text(AppLocalizations.of(context).findingLocation),
               ],
             ),
           ),
@@ -62,16 +62,16 @@ class _CheckoutLocationMapState extends State<CheckoutLocationMap> {
               children: [
                 const Icon(Icons.location_off_outlined),
                 const SizedBox(height: 8),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: Text(
-                    AppStrings.locationUnavailable,
+                    AppLocalizations.of(context).locationUnavailable,
                     textAlign: TextAlign.center,
                   ),
                 ),
                 TextButton(
                   onPressed: () => setState(_load),
-                  child: const Text(AppStrings.tryAgain),
+                  child: Text(AppLocalizations.of(context).tryAgain),
                 ),
               ],
             ),

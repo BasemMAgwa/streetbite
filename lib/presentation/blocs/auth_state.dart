@@ -1,3 +1,4 @@
+import '../../core/constants/message.dart';
 import '../../domain/entities/app_user.dart';
 
 enum AuthStatus { initial, unauthenticated, authenticated }
@@ -13,5 +14,5 @@ class AuthState {
   final AuthStatus status;
   final AppUser? user;
   final bool isBusy;
-  final String? message;
+  final AppMessage? message;
 }

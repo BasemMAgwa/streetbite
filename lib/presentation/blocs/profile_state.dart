@@ -1,3 +1,5 @@
+import '../../core/constants/message.dart';
+
 import 'dart:typed_data';
 
 class ProfileState {
@@ -13,5 +15,5 @@ class ProfileState {
   final String? deviceModel;
   final String? deviceOs;
   final bool isUploading;
-  final String? message;
+  final AppMessage? message;
 }

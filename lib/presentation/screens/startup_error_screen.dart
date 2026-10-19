@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 class StartupErrorScreen extends StatelessWidget {
@@ -10,6 +10,7 @@ class StartupErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -20,15 +21,9 @@ class StartupErrorScreen extends StatelessWidget {
             children: [
               const Icon(Icons.wifi_off, size: 56, color: AppTheme.green),
               const SizedBox(height: 16),
-              const Text(
-                AppStrings.serviceUnavailable,
-                textAlign: TextAlign.center,
-              ),
+              Text(l10n.serviceUnavailable, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text(AppStrings.tryAgain),
-              ),
+              FilledButton(onPressed: onRetry, child: Text(l10n.tryAgain)),
             ],
           ),
         ),

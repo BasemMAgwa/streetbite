@@ -7,7 +7,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:streetbite/app.dart';
-import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/constants/message.dart';
+
+import 'helpers/l10n.dart';
+
 import 'package:streetbite/data/models/user_model.dart';
 import 'package:streetbite/data/datasources/cash_payment_method.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
@@ -67,9 +70,26 @@ class FakeDeviceInfoRepository implements DeviceInfoRepository {
 
 class FakeBiometricRepository implements BiometricRepository {
   BiometricResult result = BiometricResult.success;
+  int authenticateCalls = 0;
 
   @override
-  Future<BiometricResult> authenticate() async => result;
+  Future<BiometricResult> authenticate(String localizedReason) async {
+    authenticateCalls++;
+    return result;
+  }
+}
+
+class DelayedSecuritySettingsRepository implements SecuritySettingsRepository {
+  final loadResult = Completer<bool>();
+  bool? savedValue;
+
+  @override
+  Future<bool> loadProfileLock() => loadResult.future;
+
+  @override
+  Future<void> saveProfileLock(bool enabled) async {
+    savedValue = enabled;
+  }
 }
 
 // Minimal fakes used only so HomeScreen and its dependencies resolve.
@@ -208,7 +228,7 @@ void main() {
       expect(Uint8List.fromList([1, 2, 3]), repository.savedBytes);
       expect(uploaded.single, 'AQID');
       expect(cubit.state.isUploading, false);
-      expect(cubit.state.message, AppStrings.photoUploaded);
+      expect(cubit.state.message, AppMessage.photoUploaded);
       await cubit.close();
     },
   );
@@ -229,7 +249,7 @@ void main() {
 
     expect(repository.savedBytes, bytes);
     expect(cubit.state.photoBytes, bytes);
-    expect(cubit.state.message, AppStrings.photoUploaded);
+    expect(cubit.state.message, AppMessage.photoUploaded);
     await cubit.close();
   });
 
@@ -244,7 +264,7 @@ void main() {
 
     expect(cubit.state.photoBytes, isNull);
     expect(cubit.state.isUploading, false);
-    expect(cubit.state.message, AppStrings.photoUploadError);
+    expect(cubit.state.message, AppMessage.photoUploadError);
     expect(repository.savedBytes, isNull);
     await cubit.close();
   });
@@ -264,7 +284,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.profile).last);
+    await tester.tap(find.text(enL10n.profile).last);
     await tester.pumpAndSettle();
     expect(find.byType(ProfileScreen), findsOneWidget);
     expect(find.text('sara@example.com'), findsOneWidget);
@@ -288,11 +308,11 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.profile).last);
+    await tester.tap(find.text(enL10n.profile).last);
     await tester.pump();
     expect(find.byType(ProfileScreen), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text(AppStrings.biometricFailed), findsOneWidget);
+    expect(find.text(enL10n.biometricFailed), findsOneWidget);
   });
 
   test('toggling the lock flips the state and persists it', () async {
@@ -308,6 +328,56 @@ void main() {
     await restored.stream.first;
     expect(restored.state, false);
     await restored.close();
+  });
+
+  test('a pending preference load does not undo a lock change', () async {
+    final repository = DelayedSecuritySettingsRepository();
+    final cubit = ProfileLockCubit(repository);
+    final loading = cubit.load();
+
+    await cubit.toggle();
+    repository.loadResult.complete(true);
+    await loading;
+
+    expect(cubit.state, false);
+    expect(repository.savedValue, false);
+    await cubit.close();
+  });
+
+  testWidgets('enabling the lock closes an open profile and gates reentry', (
+    tester,
+  ) async {
+    final auth = earlier.FakeAuthRepository()
+      ..signedInUser = const AppUser(
+        id: 'uid-1',
+        fullName: 'Sara Ali',
+        email: 'sara@example.com',
+      );
+    locator.registerSingleton<AuthCubit>(makeAuthCubit(auth));
+    final biometrics = FakeBiometricRepository();
+    registerHomeDependencies(
+      biometricRepository: biometrics,
+      profileLockEnabled: false,
+    );
+    addTearDown(() async => locator.reset());
+
+    await tester.pumpWidget(const StreetBiteApp());
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(enL10n.profile).last);
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(biometrics.authenticateCalls, 0);
+
+    await tester.tap(find.byTooltip(enL10n.profileLockOffTooltip));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileScreen), findsNothing);
+
+    await tester.tap(find.text(enL10n.profile).last);
+    await tester.pumpAndSettle();
+    expect(biometrics.authenticateCalls, 1);
+    expect(find.byType(ProfileScreen), findsOneWidget);
   });
 
   testWidgets('lock off opens the profile without biometrics', (tester) async {
@@ -329,7 +399,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.profile).last);
+    await tester.tap(find.text(enL10n.profile).last);
     await tester.pumpAndSettle();
     expect(find.byType(ProfileScreen), findsOneWidget);
     expect(find.text('sara@example.com'), findsOneWidget);
@@ -352,25 +422,25 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1400));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(AppStrings.profile).last);
+    await tester.tap(find.text(enL10n.profile).last);
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.noFavorites), findsOneWidget);
+    expect(find.text(enL10n.noFavorites), findsOneWidget);
 
     final ordersSegment = find.descendant(
       of: find.byType(SegmentedButton<ProfileSection>),
-      matching: find.text(AppStrings.orders),
+      matching: find.text(enL10n.orders),
     );
     await tester.tap(ordersSegment);
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.noOrders), findsOneWidget);
-    expect(find.text(AppStrings.noFavorites), findsNothing);
+    expect(find.text(enL10n.noOrders), findsOneWidget);
+    expect(find.text(enL10n.noFavorites), findsNothing);
 
     final favoritesSegment = find.descendant(
       of: find.byType(SegmentedButton<ProfileSection>),
-      matching: find.text(AppStrings.favorites),
+      matching: find.text(enL10n.favorites),
     );
     await tester.tap(favoritesSegment);
     await tester.pumpAndSettle();
-    expect(find.text(AppStrings.noFavorites), findsOneWidget);
+    expect(find.text(enL10n.noFavorites), findsOneWidget);
   });
 }

@@ -1,3 +1,4 @@
+import '../../core/constants/message.dart';
 import '../../domain/entities/payment_type.dart';
 
 class CheckoutState {
@@ -11,5 +12,5 @@ class CheckoutState {
   final PaymentType payment;
   final bool isPlacing;
   final bool orderPlaced;
-  final String? message;
+  final AppMessage? message;
 }

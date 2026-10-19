@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
+import '../l10n/message_localizations.dart';
 import '../blocs/cart_bloc.dart';
 import '../blocs/cart_state.dart';
 import '../blocs/favourites_cubit.dart';
 import '../blocs/favourites_state.dart';
+import '../blocs/locale_bloc.dart';
+import '../blocs/locale_event.dart';
 import '../blocs/profile_lock_cubit.dart';
 import '../blocs/theme_bloc.dart';
 import '../blocs/theme_event.dart';
@@ -22,6 +26,7 @@ class ThemeToggleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isDark = context.watch<ThemeBloc>().state == ThemeMode.dark;
     return IconButton(
       onPressed: () => context.read<ThemeBloc>().add(const ToggleTheme()),
@@ -29,7 +34,36 @@ class ThemeToggleButton extends StatelessWidget {
         isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
         color: iconColor ?? Theme.of(context).colorScheme.onSurface,
       ),
-      tooltip: isDark ? AppStrings.lightMode : AppStrings.darkMode,
+      tooltip: isDark ? l10n.lightMode : l10n.darkMode,
+    );
+  }
+}
+
+class LanguageToggleButton extends StatelessWidget {
+  const LanguageToggleButton({super.key, this.iconColor});
+
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isArabic = context.watch<LocaleBloc>().state.languageCode == 'ar';
+    return TextButton(
+      onPressed: () => context.read<LocaleBloc>().add(
+        ChangeLocale(Locale(isArabic ? 'en' : 'ar')),
+      ),
+      style: TextButton.styleFrom(
+        foregroundColor: iconColor ?? Theme.of(context).colorScheme.onSurface,
+        minimumSize: const Size(40, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+      ),
+      child: Tooltip(
+        message: l10n.switchLanguage,
+        child: Text(
+          isArabic ? 'EN' : l10n.languageArabic,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
     );
   }
 }
@@ -41,20 +75,17 @@ class BiometricLockButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final enabled = context.watch<ProfileLockCubit>().state;
     return IconButton(
       onPressed: () {
         context.read<ProfileLockCubit>().toggle();
         showAppSnackBar(
           context,
-          enabled
-              ? AppStrings.profileLockDisabled
-              : AppStrings.profileLockEnabled,
+          enabled ? l10n.profileLockDisabled : l10n.profileLockEnabled,
         );
       },
-      tooltip: enabled
-          ? AppStrings.profileLockOnTooltip
-          : AppStrings.profileLockOffTooltip,
+      tooltip: enabled ? l10n.profileLockOnTooltip : l10n.profileLockOffTooltip,
       icon: Icon(
         enabled ? Icons.lock : Icons.lock_open,
         color: iconColor ?? Theme.of(context).colorScheme.onSurface,
@@ -76,58 +107,73 @@ class AppHeaderActions extends StatelessWidget {
   final Color? iconColor;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (showTheme) ThemeToggleButton(iconColor: iconColor),
-      BlocBuilder<FavouritesCubit, FavouritesState>(
-        builder: (context, state) => Badge(
-          backgroundColor: AppTheme.badgeGreen,
-          textColor: Colors.white,
-          isLabelVisible: state.count > 0,
-          offset: const Offset(-7, 4),
-          label: Text('${state.count}'),
-          child: IconButton(
-            tooltip: AppStrings.favorites,
-            color: iconColor,
-            onPressed: () {
-              if (onFavoritesPage) return;
-              FavouritesScreen.open(context);
-            },
-            icon: Icon(
-              onFavoritesPage ? Icons.favorite : Icons.favorite_border,
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showTheme) ...[
+          ThemeToggleButton(iconColor: iconColor),
+          LanguageToggleButton(iconColor: iconColor),
+        ],
+        BlocBuilder<FavouritesCubit, FavouritesState>(
+          builder: (context, state) => Badge(
+            backgroundColor: AppTheme.badgeGreen,
+            textColor: Colors.white,
+            isLabelVisible: state.count > 0,
+            offset: Offset(
+              Directionality.of(context) == TextDirection.rtl ? 7 : -7,
+              4,
             ),
-          ),
-        ),
-      ),
-      BlocConsumer<CartBloc, CartState>(
-        listenWhen: (previous, current) => current.count > previous.count,
-        listener: (context, state) {
-          if (ModalRoute.of(context)?.isCurrent != true) return;
-          showAppSnackBar(context, AppStrings.mealAdded);
-        },
-        builder: (context, state) => Badge(
-          backgroundColor: AppTheme.badgeGreen,
-          textColor: Colors.white,
-          isLabelVisible: state.count > 0,
-          offset: const Offset(-7, 4),
-          label: Text('${state.count}'),
-          child: IconButton(
-            tooltip: AppStrings.cart,
-            onPressed: () => CartScreen.open(context),
-            icon: SvgPicture.asset(
-              'assets/images/cart_icon.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                iconColor ?? Theme.of(context).colorScheme.onSurface,
-                BlendMode.srcIn,
+            label: Text('${state.count}'),
+            child: IconButton(
+              tooltip: l10n.favorites,
+              color: iconColor,
+              onPressed: () {
+                if (onFavoritesPage) return;
+                FavouritesScreen.open(context);
+              },
+              icon: Icon(
+                onFavoritesPage ? Icons.favorite : Icons.favorite_border,
               ),
             ),
           ),
         ),
-      ),
-      const SizedBox(width: 8),
-    ],
-  );
+        BlocConsumer<CartBloc, CartState>(
+          listenWhen: (previous, current) => current.count > previous.count,
+          listener: (context, state) {
+            if (ModalRoute.of(context)?.isCurrent != true) return;
+            showAppSnackBar(
+              context,
+              AppMessage.mealAdded.text(AppLocalizations.of(context)),
+            );
+          },
+          builder: (context, state) => Badge(
+            backgroundColor: AppTheme.badgeGreen,
+            textColor: Colors.white,
+            isLabelVisible: state.count > 0,
+            offset: Offset(
+              Directionality.of(context) == TextDirection.rtl ? 7 : -7,
+              4,
+            ),
+            label: Text('${state.count}'),
+            child: IconButton(
+              tooltip: l10n.cart,
+              onPressed: () => CartScreen.open(context),
+              icon: SvgPicture.asset(
+                'assets/images/cart_icon.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  iconColor ?? Theme.of(context).colorScheme.onSurface,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }

@@ -20,7 +20,12 @@ class PlaceholderScreen extends StatelessWidget {
         ? AppBar(
             title: Text(title),
             leading: IconButton(
-              icon: const Icon(Icons.chevron_left, size: 32),
+              icon: Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.chevron_right
+                    : Icons.chevron_left,
+                size: 32,
+              ),
               onPressed: () => Navigator.of(context).maybePop(),
             ),
           )

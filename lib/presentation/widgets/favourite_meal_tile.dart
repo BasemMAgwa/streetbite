@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/meal.dart';
 import '../screens/meal_details_screen.dart';
@@ -69,7 +69,7 @@ class FavouriteMealTile extends StatelessWidget {
             ),
             CartToggleIconButton(meal),
             IconButton(
-              tooltip: AppStrings.removeFromFavorites,
+              tooltip: AppLocalizations.of(context).removeFromFavorites,
               onPressed: onRemove,
               icon: Icon(
                 Icons.favorite,

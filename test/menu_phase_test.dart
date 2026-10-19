@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
-import 'package:streetbite/core/constants/app_strings.dart';
+import 'package:streetbite/core/constants/message.dart';
+import 'package:streetbite/l10n/app_localizations.dart';
+
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/data/datasources/meal_local_data_source.dart';
 import 'package:streetbite/data/datasources/meal_remote_data_source.dart';
@@ -106,7 +108,7 @@ void main() {
     expect(cubit.state.status, MenuStatus.ready);
     expect(cubit.state.meals.single.id, meal.id);
     expect(cubit.state.isCached, true);
-    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.message, AppMessage.networkError);
     await cubit.close();
   });
 
@@ -115,7 +117,7 @@ void main() {
     await cubit.loadMeals();
 
     expect(cubit.state.status, MenuStatus.error);
-    expect(cubit.state.message, AppStrings.networkError);
+    expect(cubit.state.message, AppMessage.networkError);
     await cubit.close();
   });
 
@@ -154,6 +156,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: AppTheme.light,
         home: Scaffold(body: FeaturedMeals(meals)),
       ),

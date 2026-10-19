@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 
 class HomeMenuShimmer extends StatefulWidget {
   const HomeMenuShimmer({super.key, required this.horizontalPadding});
@@ -36,7 +36,7 @@ class _HomeMenuShimmerState extends State<HomeMenuShimmer>
     final cardHeight = screenWidth < 360 ? 228.0 : 244.0;
 
     return Semantics(
-      label: AppStrings.loadingMeals,
+      label: AppLocalizations.of(context).loadingMeals,
       child: ExcludeSemantics(
         child: AnimatedBuilder(
           animation: _controller,
@@ -60,7 +60,7 @@ class _HomeMenuShimmerState extends State<HomeMenuShimmer>
                   horizontal: widget.horizontalPadding,
                 ),
                 child: const Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: _ShimmerBlock(width: 140, height: 24),
                 ),
               ),
@@ -77,7 +77,7 @@ class _HomeMenuShimmerState extends State<HomeMenuShimmer>
                   horizontal: widget.horizontalPadding,
                 ),
                 child: const Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: _ShimmerBlock(width: 115, height: 24),
                 ),
               ),
@@ -102,7 +102,7 @@ class _HomeMenuShimmerState extends State<HomeMenuShimmer>
                   horizontal: widget.horizontalPadding,
                 ),
                 child: const Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: _ShimmerBlock(width: 110, height: 24),
                 ),
               ),

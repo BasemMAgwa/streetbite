@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 import 'injection.dart';
+import 'l10n/app_localizations.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'presentation/screens/startup_error_screen.dart';
 
@@ -37,10 +38,18 @@ class _BootstrapAppState extends State<_BootstrapApp> {
       future: _startup,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return MaterialApp(home: StartupErrorScreen(onRetry: _retry));
+          return MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: StartupErrorScreen(onRetry: _retry),
+          );
         }
         if (snapshot.connectionState != ConnectionState.done) {
-          return const MaterialApp(home: SplashScreen());
+          return const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: SplashScreen(),
+          );
         }
         return const StreetBiteApp();
       },

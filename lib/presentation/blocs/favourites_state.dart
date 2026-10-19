@@ -1,3 +1,4 @@
+import '../../core/constants/message.dart';
 import '../../domain/entities/meal.dart';
 
 class FavouritesState {
@@ -11,7 +12,7 @@ class FavouritesState {
   final List<Meal> meals;
   final bool isLoading;
   final bool isSaving;
-  final String? message;
+  final AppMessage? message;
 
   int get count => meals.length;
 

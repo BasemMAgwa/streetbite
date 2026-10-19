@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/brand.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -11,11 +12,12 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppTheme.green,
       body: Semantics(
         button: onTap != null,
-        label: onTap == null ? null : AppStrings.tapToContinue,
+        label: onTap == null ? null : l10n.tapToContinue,
         child: InkWell(
           onTap: onTap,
           child: Center(
@@ -37,12 +39,12 @@ class SplashScreen extends StatelessWidget {
                       'assets/images/logo.svg',
                       width: 68,
                       height: 68,
-                      semanticsLabel: AppStrings.appName,
+                      semanticsLabel: appName,
                     ),
                   ),
                   const SizedBox(height: 18),
                   const Text(
-                    AppStrings.appName,
+                    appName,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 30,

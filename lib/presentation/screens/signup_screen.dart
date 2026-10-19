@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
 import '../../core/validation/auth_validators.dart';
+import '../../l10n/app_localizations.dart';
+import '../l10n/message_localizations.dart';
 import '../blocs/auth_cubit.dart';
 import '../blocs/auth_state.dart';
 import '../widgets/auth_screen_layout.dart';
@@ -41,6 +42,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return BlocListener<AuthCubit, AuthState>(
       listenWhen: (previous, current) =>
           previous.status != AuthStatus.authenticated &&
@@ -48,8 +50,8 @@ class _SignupScreenState extends State<SignupScreen> {
       listener: (context, state) =>
           Navigator.of(context).popUntil((route) => route.isFirst),
       child: AuthScreenLayout(
-        title: AppStrings.signUpTitle,
-        subtitle: AppStrings.signUpSubtitle,
+        title: l10n.signUpTitle,
+        subtitle: l10n.signUpSubtitle,
         imageHeightFraction: 0.45,
         child: Form(
           key: _formKey,
@@ -58,47 +60,50 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               AuthTextField(
                 controller: _name,
-                hint: AppStrings.fullName,
+                hint: l10n.fullName,
                 textCapitalization: TextCapitalization.words,
-                validator: AuthValidators.name,
+                validator: (value) => AuthValidators.name(value)?.text(l10n),
               ),
               const SizedBox(height: 10),
               AuthTextField(
                 controller: _email,
-                hint: AppStrings.email,
+                hint: l10n.email,
                 keyboardType: TextInputType.emailAddress,
-                validator: AuthValidators.email,
+                validator: (value) => AuthValidators.email(value)?.text(l10n),
               ),
               const SizedBox(height: 10),
               AuthTextField(
                 controller: _password,
-                hint: AppStrings.password,
+                hint: l10n.password,
                 obscureText: true,
-                validator: AuthValidators.signUpPassword,
+                validator: (value) =>
+                    AuthValidators.signUpPassword(value)?.text(l10n),
               ),
               const SizedBox(height: 10),
               AuthTextField(
                 controller: _confirmation,
-                hint: AppStrings.confirmPassword,
+                hint: l10n.confirmPassword,
                 obscureText: true,
                 textInputAction: TextInputAction.done,
-                validator: (value) =>
-                    AuthValidators.confirmation(value, _password.text),
+                validator: (value) => AuthValidators.confirmation(
+                  value,
+                  _password.text,
+                )?.text(l10n),
               ),
               const SizedBox(height: 16),
               BlocBuilder<AuthCubit, AuthState>(
                 buildWhen: (previous, current) =>
                     previous.isBusy != current.isBusy,
                 builder: (context, state) => AuthSubmitButton(
-                  label: AppStrings.signUp,
+                  label: l10n.signUp,
                   onPressed: _submit,
                   isBusy: state.isBusy,
                 ),
               ),
               const SizedBox(height: 12),
               AuthSwitchPrompt(
-                prompt: AppStrings.haveAccount,
-                action: AppStrings.logIn,
+                prompt: l10n.haveAccount,
+                action: l10n.logIn,
                 onTap: () => Navigator.of(context).pop(),
               ),
             ],

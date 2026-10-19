@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/order_failure.dart';
 import '../../domain/entities/payment_status.dart';
@@ -41,9 +41,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           payment: payment,
           orderPlaced: true,
           message: switch (order.paymentStatus) {
-            PaymentStatus.paid => AppStrings.orderPlacedPaid,
-            PaymentStatus.dueOnDelivery => AppStrings.orderPlacedCash,
-            PaymentStatus.pending => AppStrings.orderPlacedCardPending,
+            PaymentStatus.paid => AppMessage.orderPlacedPaid,
+            PaymentStatus.dueOnDelivery => AppMessage.orderPlacedCash,
+            PaymentStatus.pending => AppMessage.orderPlacedCardPending,
           },
         ),
       );
@@ -53,13 +53,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     }
   }
 
-  String _errorMessage(Object error) {
-    if (error is! OrderFailure) return AppStrings.orderSaveError;
+  AppMessage _errorMessage(Object error) {
+    if (error is! OrderFailure) return AppMessage.orderSaveError;
     return switch (error.type) {
-      OrderFailureType.emptyCart => AppStrings.emptyCart,
-      OrderFailureType.network => AppStrings.networkError,
-      OrderFailureType.payment => AppStrings.paymentError,
-      OrderFailureType.service => AppStrings.orderSaveError,
+      OrderFailureType.emptyCart => AppMessage.emptyCart,
+      OrderFailureType.network => AppMessage.networkError,
+      OrderFailureType.payment => AppMessage.paymentError,
+      OrderFailureType.service => AppMessage.orderSaveError,
     };
   }
 }

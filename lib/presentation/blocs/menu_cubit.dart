@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../domain/entities/meal.dart';
 import '../../domain/entities/meal_failure.dart';
 import '../../domain/repositories/meal_repository.dart';
@@ -40,8 +40,8 @@ class MenuCubit extends Cubit<MenuState> {
           meals: cached,
           isCached: cached.isNotEmpty,
           message: failure.type == MealFailureType.network
-              ? AppStrings.networkError
-              : AppStrings.menuUnavailable,
+              ? AppMessage.networkError
+              : AppMessage.menuUnavailable,
         ),
       );
     } catch (_) {
@@ -51,7 +51,7 @@ class MenuCubit extends Cubit<MenuState> {
           status: cached.isEmpty ? MenuStatus.error : MenuStatus.ready,
           meals: cached,
           isCached: cached.isNotEmpty,
-          message: AppStrings.menuUnavailable,
+          message: AppMessage.menuUnavailable,
         ),
       );
     }

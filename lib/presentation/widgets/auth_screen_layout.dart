@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
+import '../blocs/locale_bloc.dart';
+import '../blocs/locale_event.dart';
 
 class AuthScreenLayout extends StatelessWidget {
   const AuthScreenLayout({
@@ -33,10 +37,43 @@ class AuthScreenLayout extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       height: imageHeight,
-                      child: Image.asset(
-                        'assets/images/login_bg.png',
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            'assets/images/login_bg.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                          ),
+                          PositionedDirectional(
+                            top: MediaQuery.paddingOf(context).top + 8,
+                            end: 16,
+                            child: Material(
+                              color: Colors.black54,
+                              shape: const CircleBorder(),
+                              child: IconButton(
+                                tooltip: AppLocalizations.of(context)
+                                    .switchLanguage,
+                                icon: const Icon(
+                                  Icons.language,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  final bloc = context.read<LocaleBloc>();
+                                  bloc.add(
+                                    ChangeLocale(
+                                      Locale(
+                                        bloc.state.languageCode == 'ar'
+                                            ? 'en'
+                                            : 'ar',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Container(

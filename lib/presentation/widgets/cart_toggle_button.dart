@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/meal.dart';
 import '../blocs/cart_bloc.dart';
@@ -39,7 +39,9 @@ class CartToggleButton extends StatelessWidget {
           size: compact ? 18 : 22,
         ),
         label: Text(
-          isInCart ? AppStrings.removeFromCart : AppStrings.addToCart,
+          isInCart
+              ? AppLocalizations.of(context).removeFromCart
+              : AppLocalizations.of(context).addToCart,
           maxLines: 1,
         ),
         style: FilledButton.styleFrom(
@@ -73,7 +75,9 @@ class CartToggleIconButton extends StatelessWidget {
       return IconButton(
         visualDensity: VisualDensity.compact,
         iconSize: 18,
-        tooltip: isInCart ? AppStrings.removeFromCart : AppStrings.addToCart,
+        tooltip: isInCart
+            ? AppLocalizations.of(context).removeFromCart
+            : AppLocalizations.of(context).addToCart,
         onPressed: () => _toggleCartMeal(context, meal, isInCart),
         icon: Icon(
           isInCart

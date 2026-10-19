@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../core/constants/message.dart';
 import '../../core/errors/network_error.dart';
 import '../../domain/usecases/get_device_details.dart';
 import '../../domain/usecases/update_profile_photo.dart';
@@ -45,13 +45,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (kDebugMode) {
         debugPrint('device_info_plus failed (${_safeErrorLabel(error)}).');
       }
-      emit(
-        ProfileState(
-          photoBytes: state.photoBytes,
-          deviceModel: AppStrings.unknownDetail,
-          deviceOs: '',
-        ),
-      );
+      emit(ProfileState(photoBytes: state.photoBytes, deviceOs: ''));
     }
     final stored = await _storedPhoto(_userId);
     if (stored != null && !isClosed) {
@@ -128,7 +122,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           photoBytes: previous,
           deviceModel: previousDevice,
           deviceOs: previousOs,
-          message: AppStrings.photoPickError,
+          message: AppMessage.photoPickError,
         ),
       );
       return;
@@ -150,7 +144,7 @@ class ProfileCubit extends Cubit<ProfileState> {
           photoBytes: bytes,
           deviceModel: previousDevice,
           deviceOs: previousOs,
-          message: AppStrings.photoUploaded,
+          message: AppMessage.photoUploaded,
         ),
       );
     } catch (error) {
@@ -160,8 +154,8 @@ class ProfileCubit extends Cubit<ProfileState> {
           deviceModel: previousDevice,
           deviceOs: previousOs,
           message: isNetworkError(error)
-              ? AppStrings.networkError
-              : AppStrings.photoUploadError,
+              ? AppMessage.networkError
+              : AppMessage.photoUploadError,
         ),
       );
     }

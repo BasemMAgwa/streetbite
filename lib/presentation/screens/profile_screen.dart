@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../injection.dart';
 import '../blocs/auth_cubit.dart';
@@ -15,6 +15,11 @@ import '../blocs/orders_cubit.dart';
 import '../blocs/orders_state.dart';
 import '../blocs/profile_cubit.dart';
 import '../blocs/profile_state.dart';
+import '../blocs/locale_bloc.dart';
+import '../blocs/locale_event.dart';
+import '../blocs/theme_bloc.dart';
+import '../blocs/theme_event.dart';
+import '../l10n/message_localizations.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/favourite_meal_tile.dart';
 import '../widgets/order_tile.dart';
@@ -48,7 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       create: (_) => locator<OrdersCubit>(param1: user.id)..load(),
       child: BlocListener<ProfileCubit, ProfileState>(
         listenWhen: (_, current) => current.message != null,
-        listener: (context, state) => showAppSnackBar(context, state.message!),
+        listener: (context, state) => showAppSnackBar(
+          context,
+          state.message!.text(AppLocalizations.of(context)),
+        ),
         child: BlocBuilder<ProfileCubit, ProfileState>(
           builder: (context, state) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,8 +68,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Stack(
                       children: [
                         _Avatar(photoBytes: state.photoBytes),
-                        Positioned(
-                          right: 0,
+                        PositionedDirectional(
+                          end: 0,
                           bottom: 0,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -74,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             child: IconButton(
-                              tooltip: AppStrings.changePhoto,
+                              tooltip: AppLocalizations.of(context).changePhoto,
                               onPressed: state.isUploading
                                   ? null
                                   : context.read<ProfileCubit>().pickPhoto,
@@ -93,7 +101,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(user.email, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: IconButton(
+                        tooltip: AppLocalizations.of(context).settings,
+                        icon: const Icon(Icons.settings_outlined),
+                        onPressed: () => _SettingsSheet.open(context),
+                      ),
+                    ),
                     if (state.deviceModel != null)
                       Container(
                         width: double.infinity,
@@ -109,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              AppStrings.deviceCardTitle,
+                              AppLocalizations.of(context).deviceCardTitle,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
@@ -119,8 +134,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '${AppStrings.deviceModelLabel}: '
-                                    '${state.deviceModel}',
+                                    '${AppLocalizations.of(context).deviceModelLabel}: '
+                                    '${state.deviceModel ?? AppLocalizations.of(context).unknownDetail}',
                                   ),
                                 ),
                               ],
@@ -133,7 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      '${AppStrings.deviceOsLabel}: '
+                                      '${AppLocalizations.of(context).deviceOsLabel}: '
                                       '${state.deviceOs}',
                                     ),
                                   ),
@@ -146,14 +161,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                     SegmentedButton<ProfileSection>(
                       expandedInsets: EdgeInsets.zero,
+                      showSelectedIcon: false,
                       segments: [
                         ButtonSegment(
                           value: ProfileSection.favorites,
                           icon: _segmentIcon(
-                            'assets/images/bookmark_icon.svg',
+                            'assets/images/heart_icon.svg',
                             _section == ProfileSection.favorites,
                           ),
-                          label: const Text(AppStrings.favorites),
+                          label: Text(AppLocalizations.of(context).favorites),
                         ),
                         ButtonSegment(
                           value: ProfileSection.orders,
@@ -161,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'assets/images/orders_icon.svg',
                             _section == ProfileSection.orders,
                           ),
-                          label: const Text(AppStrings.orders),
+                          label: Text(AppLocalizations.of(context).orders),
                         ),
                       ],
                       selected: {_section},
@@ -175,19 +191,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: _section == ProfileSection.favorites
                     ? const _FavoritesList()
                     : const _OrdersList(),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: BlocBuilder<AuthCubit, AuthState>(
-                  buildWhen: (previous, current) =>
-                      previous.isBusy != current.isBusy,
-                  builder: (context, state) => FilledButton(
-                    onPressed: state.isBusy
-                        ? null
-                        : context.read<AuthCubit>().logOut,
-                    child: const Text(AppStrings.signOut),
-                  ),
-                ),
               ),
             ],
           ),
@@ -208,7 +211,9 @@ class _FavoritesList extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.meals.isEmpty) {
-            return const Center(child: Text(AppStrings.noFavorites));
+            return Center(
+              child: Text(AppLocalizations.of(context).noFavorites),
+            );
           }
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
@@ -244,18 +249,21 @@ class _OrdersList extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(state.message!, textAlign: TextAlign.center),
+                child: Text(
+                  state.message!.text(AppLocalizations.of(context)),
+                  textAlign: TextAlign.center,
+                ),
               ),
               TextButton(
                 onPressed: () => context.read<OrdersCubit>().load(),
-                child: const Text(AppStrings.tryAgain),
+                child: Text(AppLocalizations.of(context).tryAgain),
               ),
             ],
           ),
         );
       }
       if (state.orders.isEmpty) {
-        return const Center(child: Text(AppStrings.noOrders));
+        return Center(child: Text(AppLocalizations.of(context).noOrders));
       }
       return ListView.builder(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
@@ -264,6 +272,82 @@ class _OrdersList extends StatelessWidget {
       );
     },
   );
+}
+
+class _SettingsSheet extends StatelessWidget {
+  const _SettingsSheet();
+
+  static void open(BuildContext context) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (_) => const _SettingsSheet(),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final code = context.watch<LocaleBloc>().state.languageCode;
+    final mode = context.watch<ThemeBloc>().state;
+    final isDark = mode == ThemeMode.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SegmentedButton<String>(
+            expandedInsets: EdgeInsets.zero,
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(value: 'en', label: Text(l10n.languageEnglish)),
+              ButtonSegment(value: 'ar', label: Text(l10n.languageArabic)),
+            ],
+            selected: {code},
+            onSelectionChanged: (selection) => context.read<LocaleBloc>().add(
+              ChangeLocale(Locale(selection.first)),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SegmentedButton<bool>(
+            expandedInsets: EdgeInsets.zero,
+            showSelectedIcon: false,
+            segments: [
+              ButtonSegment(
+                value: false,
+                icon: const Icon(Icons.light_mode_outlined),
+                label: Text(l10n.lightMode),
+              ),
+              ButtonSegment(
+                value: true,
+                icon: const Icon(Icons.dark_mode_outlined),
+                label: Text(l10n.darkMode),
+              ),
+            ],
+            selected: {isDark},
+            onSelectionChanged: (selection) {
+              if (selection.first != isDark) {
+                context.read<ThemeBloc>().add(const ToggleTheme());
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          BlocBuilder<AuthCubit, AuthState>(
+            buildWhen: (previous, current) => previous.isBusy != current.isBusy,
+            builder: (context, state) => FilledButton(
+              onPressed: state.isBusy
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      context.read<AuthCubit>().logOut();
+                    },
+              child: Text(l10n.signOut),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Avatar extends StatelessWidget {

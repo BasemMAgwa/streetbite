@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/formatting/price_formatter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/meal.dart';
@@ -65,12 +65,17 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
       return Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            tooltip: AppStrings.back,
-            icon: const Icon(Icons.chevron_left, size: 32),
+            tooltip: AppLocalizations.of(context).back,
+            icon: Icon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Icons.chevron_right
+                  : Icons.chevron_left,
+              size: 32,
+            ),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
         ),
-        body: const Center(child: Text(AppStrings.menuUnavailable)),
+        body: Center(child: Text(AppLocalizations.of(context).menuUnavailable)),
       );
     }
     final imageHeight =
@@ -85,8 +90,13 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: IconButton(
-          tooltip: AppStrings.back,
-          icon: const Icon(Icons.chevron_left, size: 32),
+          tooltip: AppLocalizations.of(context).back,
+          icon: Icon(
+            Directionality.of(context) == TextDirection.rtl
+                ? Icons.chevron_right
+                : Icons.chevron_left,
+            size: 32,
+          ),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         backgroundColor: _pastImage
@@ -167,12 +177,15 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                _DetailField(AppStrings.category, meal.category),
+                _DetailField(
+                  AppLocalizations.of(context).category,
+                  meal.category,
+                ),
                 const SizedBox(height: 16),
-                _DetailField(AppStrings.origin, meal.area),
+                _DetailField(AppLocalizations.of(context).origin, meal.area),
                 const SizedBox(height: 24),
                 Text(
-                  AppStrings.instructions,
+                  AppLocalizations.of(context).instructions,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontFamily: AppTheme.bodyFont,
                     fontWeight: FontWeight.w700,
@@ -181,7 +194,7 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
                 const SizedBox(height: 10),
                 Text(
                   meal.instructions.trim().isEmpty
-                      ? AppStrings.unknownDetail
+                      ? AppLocalizations.of(context).unknownDetail
                       : meal.instructions.trim(),
                   style: Theme.of(context).textTheme.bodyLarge
                       ?.copyWith(height: 1.45),
@@ -219,8 +232,8 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
                             ),
                       label: Text(
                         isSaved
-                            ? AppStrings.removeFromFavorites
-                            : AppStrings.addToFavorites,
+                            ? AppLocalizations.of(context).removeFromFavorites
+                            : AppLocalizations.of(context).addToFavorites,
                       ),
                     ),
                   );
@@ -251,7 +264,9 @@ class _DetailField extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        value.trim().isEmpty ? AppStrings.unknownDetail : value,
+        value.trim().isEmpty
+            ? AppLocalizations.of(context).unknownDetail
+            : value,
         style: Theme.of(context).textTheme.bodyLarge,
       ),
     ],

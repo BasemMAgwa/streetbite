@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_strings.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/entities/meal.dart';
 import '../screens/meal_details_screen.dart';
@@ -47,15 +47,15 @@ class HotOffers extends StatelessWidget {
                         fit: StackFit.expand,
                         children: [
                           MealImage(meal),
-                          Positioned(
+                          PositionedDirectional(
                             top: 8,
-                            left: 8,
+                            start: 8,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 color: const Color(0xFFE85D24),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Padding(
+                              child: Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 7,
                                   vertical: 4,
@@ -70,7 +70,7 @@ class HotOffers extends StatelessWidget {
                                     ),
                                     SizedBox(width: 2),
                                     Text(
-                                      AppStrings.hotFlag,
+                                      AppLocalizations.of(context).hotFlag,
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 10,
@@ -86,7 +86,7 @@ class HotOffers extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 5, 4, 2),
+                      padding: const EdgeInsetsDirectional.fromSTEB(8, 5, 4, 2),
                       child: Row(
                         children: [
                           Expanded(

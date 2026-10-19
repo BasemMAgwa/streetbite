@@ -7,19 +7,22 @@ class ProfileLockCubit extends Cubit<bool> {
   ProfileLockCubit(this._repository) : super(true);
 
   final SecuritySettingsRepository _repository;
+  int _changeCount = 0;
 
   Future<void> load() async {
-    if (isClosed) return;
-    emit(await _repository.loadProfileLock());
+    final changeCount = _changeCount;
+    final enabled = await _repository.loadProfileLock();
+    if (!isClosed && changeCount == _changeCount) emit(enabled);
   }
 
   Future<void> toggle() async {
     final next = !state;
+    final changeCount = ++_changeCount;
     emit(next);
     try {
       await _repository.saveProfileLock(next);
     } catch (_) {
-      if (!isClosed) emit(!next);
+      if (!isClosed && changeCount == _changeCount) emit(!next);
     }
   }
 }
