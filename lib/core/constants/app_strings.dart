@@ -116,4 +116,23 @@ class AppStrings {
   static const noOrders = 'Your orders will appear here.';
   static const noFavorites = 'Your favorites will appear here.';
   static const hotFlag = 'HOT';
+  static const biometricReason = 'Unlock your profile';
+  static const biometricCancel = 'Cancel';
+  static const biometricFailed = 'Could not verify you. Please try again.';
+  static const biometricUnavailable =
+      'No biometrics are set up on this device.';
+  static const biometricCancelled = 'Profile unlock was cancelled.';
+  static const changePhoto = 'Change photo';
+  static const photoUploaded = 'Your photo has been updated.';
+  static const photoPickError =
+      'Could not open your photo library. Please try again.';
+  static const photoUploadError =
+      'Could not save your photo. Please try again.';
+  static const deviceCardTitle = 'Device';
+  static const deviceModelLabel = 'Model';
+  static const deviceOsLabel = 'OS version';
+  static const profileLockOnTooltip = 'Profile lock is on';
+  static const profileLockOffTooltip = 'Profile lock is off';
+  static const profileLockEnabled = 'Biometric profile lock enabled.';
+  static const profileLockDisabled = 'Biometric profile lock disabled.';
 }

@@ -19,6 +19,15 @@ class AuthRemoteDataSource {
         .build();
   }
 
+  Future<String?> storedPhoto(String userId) async {
+    try {
+      final document = await _firestore.collection('Users').doc(userId).get();
+      return document.data()?['photoBase64'] as String?;
+    } on FirebaseException {
+      return null;
+    }
+  }
+
   Future<UserModel> signIn(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,

@@ -6,11 +6,15 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../domain/repositories/favourites_repository.dart';
 import '../../injection.dart';
+import '../../domain/entities/biometric_result.dart';
+import '../../domain/usecases/authenticate_with_biometrics.dart';
 import '../blocs/favourites_cubit.dart';
 import '../blocs/favourites_state.dart';
 import '../blocs/menu_cubit.dart';
 import '../blocs/menu_state.dart';
 import '../blocs/orders_cubit.dart';
+import '../blocs/profile_cubit.dart';
+import '../blocs/profile_lock_cubit.dart';
 import '../blocs/auth_cubit.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/app_snack_bar.dart';
@@ -29,6 +33,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) => MultiBlocProvider(
     providers: [
       BlocProvider(create: (_) => locator<MenuCubit>()..loadMeals()),
+      BlocProvider(create: (_) => locator<ProfileLockCubit>()..load()),
       BlocProvider(
         lazy: false,
         create: (_) => FavouritesCubit(
@@ -54,6 +59,29 @@ class _HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<_HomeView> {
   int _tab = 0;
+  bool _unlockingProfile = false;
+
+  Future<void> _openProfile() async {
+    if (_unlockingProfile) return;
+    if (!context.read<ProfileLockCubit>().state) {
+      setState(() => _tab = 3);
+      return;
+    }
+    setState(() => _unlockingProfile = true);
+    final result = await locator<AuthenticateWithBiometrics>()();
+    if (!mounted) return;
+    setState(() => _unlockingProfile = false);
+    switch (result) {
+      case BiometricResult.success:
+        setState(() => _tab = 3);
+      case BiometricResult.cancelled:
+        showAppSnackBar(context, AppStrings.biometricCancelled);
+      case BiometricResult.unavailable:
+        showAppSnackBar(context, AppStrings.biometricUnavailable);
+      case BiometricResult.failed:
+        showAppSnackBar(context, AppStrings.biometricFailed);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +89,7 @@ class _HomeViewState extends State<_HomeView> {
       appBar: AppBar(
         titleSpacing: 8,
         title: const ThemeToggleButton(),
-        actions: const [AppHeaderActions()],
+        actions: const [BiometricLockButton(), AppHeaderActions()],
       ),
       body: switch (_tab) {
         0 => const _HomeFeed(),
@@ -72,7 +100,13 @@ class _HomeViewState extends State<_HomeView> {
           )..load(),
           child: const OrdersScreen(),
         ),
-        _ => const ProfileScreen(),
+        _ => BlocProvider(
+          create: (_) => locator<ProfileCubit>(
+            param1: context.read<AuthCubit>().state.user!.id,
+            param2: context.read<AuthCubit>().updatePhoto,
+          )..load(),
+          child: const ProfileScreen(),
+        ),
       },
       bottomNavigationBar: ColoredBox(
         color: Theme.of(context).colorScheme.surface,
@@ -80,7 +114,13 @@ class _HomeViewState extends State<_HomeView> {
           padding: const EdgeInsets.only(top: 8, bottom: 4),
           child: BottomNavigationBar(
             currentIndex: _tab,
-            onTap: (index) => setState(() => _tab = index),
+            onTap: (index) {
+              if (index == 3 && _tab != 3) {
+                _openProfile();
+              } else {
+                setState(() => _tab = index);
+              }
+            },
             type: BottomNavigationBarType.fixed,
             selectedItemColor: AppTheme.green,
             unselectedItemColor: AppTheme.muted,

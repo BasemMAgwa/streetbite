@@ -30,6 +30,10 @@ dependencies:
   google_maps_flutter: ^2.19.0
   geolocator: ^14.1.1
   google_maps_flutter_ios_sdk9: ^2.19.0
+  image_picker: ^1.2.4
+  local_auth: ^3.0.2
+  device_info_plus: ^13.3.0
+  file_selector: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

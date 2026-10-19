@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>NSFaceIDUsageDescription</key>
+		<string>StreetBite uses Face ID to protect your profile.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>StreetBite needs your photo library to set a profile photo.</string>
 		<key>MapsAPIKey</key>
 		<string>$(MAPS_API_KEY)</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

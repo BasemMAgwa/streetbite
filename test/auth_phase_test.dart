@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +10,8 @@ import 'package:streetbite/app.dart';
 import 'package:streetbite/core/constants/app_strings.dart';
 import 'package:streetbite/core/theme/app_theme.dart';
 import 'package:streetbite/domain/entities/app_user.dart';
+import 'package:streetbite/domain/entities/biometric_result.dart';
+import 'package:streetbite/domain/entities/device_details.dart';
 import 'package:streetbite/data/datasources/cash_payment_method.dart';
 import 'package:streetbite/data/datasources/cart_local_data_source.dart';
 import 'package:streetbite/data/datasources/vendor_locations.dart';
@@ -18,13 +21,20 @@ import 'package:streetbite/domain/entities/favourites_failure.dart';
 import 'package:streetbite/domain/entities/meal.dart';
 import 'package:streetbite/domain/entities/order.dart';
 import 'package:streetbite/domain/repositories/auth_repository.dart';
+import 'package:streetbite/domain/repositories/biometric_repository.dart';
+import 'package:streetbite/domain/repositories/device_info_repository.dart';
 import 'package:streetbite/domain/repositories/favourites_repository.dart';
 import 'package:streetbite/domain/repositories/meal_repository.dart';
 import 'package:streetbite/domain/repositories/order_repository.dart';
+import 'package:streetbite/domain/repositories/profile_repository.dart';
+import 'package:streetbite/domain/repositories/security_settings_repository.dart';
+import 'package:streetbite/domain/usecases/authenticate_with_biometrics.dart';
+import 'package:streetbite/domain/usecases/get_device_details.dart';
 import 'package:streetbite/domain/usecases/place_order.dart';
 import 'package:streetbite/domain/usecases/sign_in.dart';
 import 'package:streetbite/domain/usecases/sign_out.dart';
 import 'package:streetbite/domain/usecases/sign_up.dart';
+import 'package:streetbite/domain/usecases/update_profile_photo.dart';
 import 'package:streetbite/injection.dart';
 import 'package:streetbite/presentation/blocs/auth_cubit.dart';
 import 'package:streetbite/presentation/blocs/auth_state.dart';
@@ -32,6 +42,8 @@ import 'package:streetbite/presentation/blocs/checkout_cubit.dart';
 import 'package:streetbite/presentation/blocs/favourites_cubit.dart';
 import 'package:streetbite/presentation/blocs/menu_cubit.dart';
 import 'package:streetbite/presentation/blocs/orders_cubit.dart';
+import 'package:streetbite/presentation/blocs/profile_cubit.dart';
+import 'package:streetbite/presentation/blocs/profile_lock_cubit.dart';
 import 'package:streetbite/presentation/screens/login_screen.dart';
 import 'package:streetbite/presentation/screens/home_screen.dart';
 import 'package:streetbite/presentation/screens/meal_details_screen.dart';
@@ -51,6 +63,45 @@ class FakeOrderRepository implements OrderRepository {
 
   @override
   Stream<List<Order>> watchOrders(String userId) => Stream.value([]);
+}
+
+class FakeBiometricRepository implements BiometricRepository {
+  BiometricResult result = BiometricResult.success;
+
+  @override
+  Future<BiometricResult> authenticate() async => result;
+}
+
+class FakeProfileRepository implements ProfileRepository {
+  @override
+  Future<void> updatePhoto(String userId, Uint8List bytes) async {}
+}
+
+class FakeDeviceInfoRepository implements DeviceInfoRepository {
+  @override
+  Future<DeviceDetails> load() async =>
+      const DeviceDetails(model: 'Pixel 8', osVersion: 'Android 14');
+}
+
+class FakeSecuritySettingsRepository implements SecuritySettingsRepository {
+  FakeSecuritySettingsRepository([this.enabled = true]);
+
+  bool enabled;
+
+  @override
+  Future<bool> loadProfileLock() async => enabled;
+
+  @override
+  Future<void> saveProfileLock(bool value) async => enabled = value;
+}
+
+void registerProfileLockDependencies({bool enabled = true}) {
+  locator.registerLazySingleton<SecuritySettingsRepository>(
+    () => FakeSecuritySettingsRepository(enabled),
+  );
+  locator.registerLazySingleton<ProfileLockCubit>(
+    () => ProfileLockCubit(locator()),
+  );
 }
 
 class FakeAuthRepository implements AuthRepository {
@@ -168,6 +219,7 @@ void main() {
         email: 'sara@example.com',
       );
     locator.registerSingleton<AuthCubit>(makeCubit(auth));
+    registerProfileLockDependencies();
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
     locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
     addTearDown(() async => locator.reset());
@@ -357,8 +409,26 @@ void main() {
     final repository = FakeAuthRepository();
     final cubit = makeCubit(repository);
     locator.registerSingleton<AuthCubit>(cubit);
+    registerProfileLockDependencies();
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
     locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
+    locator.registerSingleton<BiometricRepository>(FakeBiometricRepository());
+    locator.registerLazySingleton(() => AuthenticateWithBiometrics(locator()));
+    locator.registerLazySingleton<ProfileRepository>(FakeProfileRepository.new);
+    locator.registerLazySingleton(() => UpdateProfilePhoto(locator()));
+    locator.registerLazySingleton<DeviceInfoRepository>(
+      FakeDeviceInfoRepository.new,
+    );
+    locator.registerLazySingleton(() => GetDeviceDetails(locator()));
+    locator.registerFactoryParam<ProfileCubit, String, void Function(String)>(
+      (userId, onPhoto) => ProfileCubit(
+        UpdateProfilePhoto(locator()),
+        GetDeviceDetails(locator()),
+        (_) async => null,
+        userId,
+        onPhotoUploaded: onPhoto,
+      ),
+    );
     addTearDown(() async {
       await locator.reset();
     });
@@ -400,8 +470,26 @@ void main() {
         email: 'sara@example.com',
       );
     locator.registerSingleton<AuthCubit>(makeCubit(repository));
+    registerProfileLockDependencies();
     locator.registerFactory<MenuCubit>(() => MenuCubit(FakeMealRepository()));
     locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
+    locator.registerSingleton<BiometricRepository>(FakeBiometricRepository());
+    locator.registerLazySingleton(() => AuthenticateWithBiometrics(locator()));
+    locator.registerLazySingleton<ProfileRepository>(FakeProfileRepository.new);
+    locator.registerLazySingleton(() => UpdateProfilePhoto(locator()));
+    locator.registerLazySingleton<DeviceInfoRepository>(
+      FakeDeviceInfoRepository.new,
+    );
+    locator.registerLazySingleton(() => GetDeviceDetails(locator()));
+    locator.registerFactoryParam<ProfileCubit, String, void Function(String)>(
+      (userId, onPhoto) => ProfileCubit(
+        UpdateProfilePhoto(locator()),
+        GetDeviceDetails(locator()),
+        (_) async => null,
+        userId,
+        onPhotoUploaded: onPhoto,
+      ),
+    );
     locator.registerFactoryParam<OrdersCubit, String, void>(
       (userId, _) => OrdersCubit(FakeOrderRepository(), userId),
     );
@@ -518,6 +606,7 @@ void main() {
       );
     final meals = PendingMealRepository();
     locator.registerSingleton<AuthCubit>(makeCubit(repository));
+    registerProfileLockDependencies();
     locator.registerFactory<MenuCubit>(() => MenuCubit(meals));
     locator.registerSingleton<FavouritesRepository>(FakeFavouritesRepository());
     addTearDown(() async => locator.reset());
@@ -556,6 +645,7 @@ void main() {
     final favourites = FakeFavouritesRepository()
       ..pendingAdd = Completer<void>();
     locator.registerSingleton<AuthCubit>(makeCubit(auth));
+    registerProfileLockDependencies();
     locator.registerFactory<MenuCubit>(
       () => MenuCubit(FakeMealRepository(longInstructions: true)),
     );

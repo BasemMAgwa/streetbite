@@ -76,6 +76,38 @@ The launcher icon is the white logo on the primary green (`#00C874`).
 is the Android adaptive icon foreground. After changing either file, regenerate the
 Android and iOS icons with `dart run flutter_launcher_icons`.
 
+## Phase 6: profile
+
+The Profile tab is protected by device biometrics. Tapping it calls
+`local_auth`; the tab only opens after a successful scan, and failure or
+cancellation shows a snackbar while the user stays on the current tab. When the
+device has no biometrics enrolled, a snackbar explains and the profile stays
+closed. A lock icon in the home top bar toggles the requirement on or off; the
+choice is saved in SharedPreferences and remembered across launches, and the
+profile then opens without a scan while the lock is off. On Android, biometrics
+must be enrolled first (Settings > Security >
+Fingerprint); on a connected emulator, simulate a touch with
+`adb emu finger touch 1`.
+
+The profile screen shows the account photo, name, email, and the device model
+and OS version from `device_info_plus`, detected through
+`defaultTargetPlatform`: Android reports manufacturer and model, iOS the
+machine name, and Windows the computer name and display version; no runtime
+permission is needed on any of them. A gallery photo is picked with
+`image_picker` on Android, iOS and macOS (resized to 512 px, compressed to
+quality 70). On Android, a failed picker launch retries with the system
+document picker; Windows and Linux use `file_selector` directly. The photo is
+shown immediately, then stored as base64 in `Users/{uid}.photoBase64` through the
+`FirestoreService` singleton, which keeps it inside the Firestore document
+limit and under the existing security rules. Android's system photo and document
+pickers grant access to the selected file, so no broad media-storage permission
+is needed.
+
+The photo is read back on sign-in, and accounts without a photo keep working.
+
+Below the device card, a segmented control switches between the favorites and
+orders lists, reusing the favourites and order tiles.
+
 ## Checks
 
 Run `flutter analyze` and `flutter test` from this directory. Firebase requests

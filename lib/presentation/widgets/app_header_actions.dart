@@ -8,6 +8,7 @@ import '../blocs/cart_bloc.dart';
 import '../blocs/cart_state.dart';
 import '../blocs/favourites_cubit.dart';
 import '../blocs/favourites_state.dart';
+import '../blocs/profile_lock_cubit.dart';
 import '../blocs/theme_bloc.dart';
 import '../blocs/theme_event.dart';
 import '../screens/cart_screen.dart';
@@ -29,6 +30,35 @@ class ThemeToggleButton extends StatelessWidget {
         color: iconColor ?? Theme.of(context).colorScheme.onSurface,
       ),
       tooltip: isDark ? AppStrings.lightMode : AppStrings.darkMode,
+    );
+  }
+}
+
+class BiometricLockButton extends StatelessWidget {
+  const BiometricLockButton({super.key, this.iconColor});
+
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = context.watch<ProfileLockCubit>().state;
+    return IconButton(
+      onPressed: () {
+        context.read<ProfileLockCubit>().toggle();
+        showAppSnackBar(
+          context,
+          enabled
+              ? AppStrings.profileLockDisabled
+              : AppStrings.profileLockEnabled,
+        );
+      },
+      tooltip: enabled
+          ? AppStrings.profileLockOnTooltip
+          : AppStrings.profileLockOffTooltip,
+      icon: Icon(
+        enabled ? Icons.lock : Icons.lock_open,
+        color: iconColor ?? Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 }

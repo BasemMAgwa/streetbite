@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../domain/entities/app_user.dart';
 import '../../domain/entities/auth_failure.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/sign_in.dart';
@@ -101,6 +102,23 @@ class AuthCubit extends Cubit<AuthState> {
         ),
       );
     }
+  }
+
+  void updatePhoto(String photoBase64) {
+    final user = state.user;
+    if (user == null) return;
+    emit(
+      AuthState(
+        status: state.status,
+        user: AppUser(
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          photoBase64: photoBase64,
+        ),
+        message: state.message,
+      ),
+    );
   }
 
   String _messageFor(AuthFailureType type) => switch (type) {
